@@ -29,30 +29,29 @@
     animation: flt-fadeIn 0.3s ease;
 }
 
-/* Mobile menu fix */
+/* Mobile Fix - Universal for Menu and Trackers */
 @media (max-width: 768px) {
-    #flt-menu {
-        /* Фиксируем ширину и отступы по бокам */
-        width: auto !important;
-        min-width: unset !important;
-        left: 20px !important;
-        right: 20px !important;
-        
-        /* Исправляем высоту, чтобы окно было большим */
+    /* Применяем стили и к главному меню (#flt-menu), и к окнам трекеров (.flt-tracker-container) */
+    #flt-menu, 
+    .flt-tracker-container {
+        /* 1. ЖЕСТКОЕ ЦЕНТРИРОВАНИЕ */
+        position: fixed !important;
         top: 50% !important;
-        max-height: 85vh !important; /* Занимает до 85% высоты экрана */
-        overflow-y: auto !important; /* Включает прокрутку, если контента много */
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
         
-        /* Центрирование только по вертикали (так как по горизонтали мы растянули через left/right) */
-        transform: translateY(-50%) !important; 
+        /* 2. РАЗМЕРЫ ДЛЯ ТЕЛЕФОНА */
+        width: 90vw !important;        /* Ширина 90% экрана (чтобы не было узкой полоски) */
+        max-width: 450px !important;   /* Но не шире, чем на ПК */
         
-        /* Дополнительно: убедимся, что контент внутри не ломается */
-        display: flex !important;
-        flex-direction: column !important;
-    }
-    
-    /* Если внутри есть контейнер контента, даем ему скроллиться */
-    #flt-menu > div {
-        overflow-y: auto !important;
+        /* 3. ВЫСОТА И СКРОЛЛ (Самое важное) */
+        height: auto !important;       /* Высота подстраивается под контент... */
+        max-height: 80vh !important;   /* ...но не более 80% высоты экрана */
+        overflow-y: auto !important;   /* Если контента больше — появляется скролл */
+        
+        /* Сброс лишних отступов, которые могли ломать позицию */
+        margin: 0 !important;
+        right: auto !important;
+        bottom: auto !important;
     }
 }
