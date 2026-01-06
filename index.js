@@ -1,306 +1,596 @@
-// ═══════════════════════════════════════════════════════════════
-//  LIFE TRACKER v3.0 - AI-Powered
-// ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════
+   FAWN'S LIFE TRACKER - STYLES
+   ═══════════════════════════════════════════════════════════════ */
 
-import { getContext, extension_settings } from "../../../extensions.js";
-import { saveSettingsDebounced } from "../../../../script.js";
+/* Main Button in Input Panel */
+#flt-main-button {
+    background: transparent;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 4px;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    padding: 6px 10px;
+    margin: 0 4px;
+    font-size: 1em;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
 
-const extensionName = "life-tracker";
+#flt-main-button:hover {
+    background: color-mix(in srgb, var(--SmartThemeAccent) 20%, transparent);
+    border-color: var(--SmartThemeAccent);
+    color: var(--SmartThemeAccent);
+}
 
-// ═══════════════════════════════════════════════════════════════
-//  TEMPLATES FOR AI TO FILL
-// ═══════════════════════════════════════════════════════════════
+#flt-main-button.active {
+    background: color-mix(in srgb, var(--SmartThemeAccent) 30%, transparent);
+    border-color: var(--SmartThemeAccent);
+}
 
-const TEMPLATES = {
-    conception: (hints) => `
-[CONCEPTION ROLL - Fill based on story context${hints.notes ? ` | User notes: ${hints.notes}` : ''}]
-<div style="background:transparent;color:var(--SmartThemeBodyColor);font-family:'Courier New',monospace;font-size:0.85em;padding:5px;margin-top:-15px;margin-bottom:20px;text-align:center;letter-spacing:1px;opacity:0.9;border-bottom:1px dashed var(--SmartThemeBorderColor);">
-<span style="opacity:0.7;"><i class="fa-solid fa-dice"></i> ROLL:</span>
-<span style="color:var(--SmartThemeQuoteColor);font-weight:bold;">{ROLL_1-100}/100</span>
-<span style="margin:0 8px;color:var(--SmartThemeBorderColor);">|</span>
-<span style="opacity:0.7;"><i class="fa-solid fa-baby"></i> CONCEPTION:</span>
-<span style="color:var(--SmartThemeQuoteColor);font-weight:bold;">{YES/NO}</span>
-<span style="margin:0 8px;color:var(--SmartThemeBorderColor);">|</span>
-<span style="color:var(--SmartThemeQuoteColor);font-weight:bold;"><i class="fa-regular fa-calendar-check"></i> DUE: {DATE or N/A}</span>
-</div>`,
+/* Popup Menu Container */
+#flt-popup-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 8px;
+    background: var(--SmartThemeBlurTintColor, var(--SmartThemeBodyColor));
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    min-width: 280px;
+    max-width: 350px;
+    z-index: 9999;
+    display: none;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
 
-    pregnancy: (hints) => `
-[PREGNANCY STATUS - Fill based on story context${hints.week ? ` | Week: ${hints.week}` : ''}${hints.notes ? ` | Notes: ${hints.notes}` : ''}]
-<div style="background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:6px;padding:10px;margin-top:5px;margin-bottom:20px;font-family:'Courier New',monospace;font-size:0.85em;line-height:1.5;color:var(--SmartThemeBodyColor);">
-<div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:4px;padding-bottom:4px;font-weight:bold;color:var(--SmartThemeQuoteColor);text-transform:uppercase;letter-spacing:1px;">
-<i class="fa-solid fa-person-pregnant"></i> Pregnancy Status</div>
-<div style="font-size:0.75em;text-transform:uppercase;margin-bottom:8px;color:var(--SmartThemeQuoteColor);opacity:0.8;">
-<i class="fa-solid fa-eye-slash"></i> Knowledge: <span style="font-weight:bold;">{HIDDEN/DISCLOSED}</span></div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-<div><span style="opacity:0.7;"><i class="fa-regular fa-clock"></i> Week:</span> <strong style="color:var(--SmartThemeQuoteColor);">{WEEK}</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-solid fa-apple-whole"></i> Size:</span> <strong style="color:var(--SmartThemeQuoteColor);">{FRUIT/VEGGIE COMPARISON}</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-regular fa-calendar-check"></i> Due:</span> <strong style="color:var(--SmartThemeQuoteColor);">{DATE}</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-solid fa-venus-mars"></i> Gender:</span> <strong style="color:var(--SmartThemeQuoteColor);">{UNKNOWN/BOY/GIRL/TWINS}</strong></div>
-</div>
-<div style="margin-top:8px;border-top:1px dotted var(--SmartThemeBorderColor);padding-top:5px;">
-<div style="margin-bottom:4px;"><span style="color:var(--SmartThemeQuoteColor);"><i class="fa-solid fa-head-side-virus"></i> Symptoms:</span> <span style="opacity:0.9;">{2-3 REALISTIC SYMPTOMS}</span></div>
-<div style="margin-bottom:4px;"><span style="color:var(--SmartThemeQuoteColor);"><i class="fa-solid fa-user-doctor"></i> Next Visit:</span> <span style="opacity:0.9;">{DATE | PROCEDURE}</span></div>
-<div><span style="color:#e76f51;"><i class="fa-solid fa-triangle-exclamation"></i> Risks:</span> <span style="opacity:0.9;font-style:italic;">{STABLE or SPECIFIC RISK}</span></div>
-</div></div>`,
+#flt-popup-menu.show {
+    display: block;
+    animation: flt-slideUp 0.2s ease;
+}
 
-    birth: (hints) => `
-[BIRTH REPORT - Generate based on pregnancy history${hints.notes ? ` | Notes: ${hints.notes}` : ''}]
-<div style="background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;margin-top:5px;margin-bottom:20px;font-family:'Courier New',monospace;font-size:0.85em;line-height:1.5;color:var(--SmartThemeBodyColor);border-left:4px solid var(--SmartThemeQuoteColor);">
-<div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:6px;padding-bottom:4px;font-weight:bold;color:var(--SmartThemeQuoteColor);text-transform:uppercase;letter-spacing:1.5px;display:flex;justify-content:space-between;">
-<span><i class="fa-solid fa-baby-carriage"></i> Birth Report</span>
-<span style="font-size:0.8em;opacity:0.7;">{STORY_DATE}</span></div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-<div><span style="opacity:0.7;"><i class="fa-solid fa-venus-mars"></i> Gender:</span> <strong style="color:var(--SmartThemeQuoteColor);">{GENDER}</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-solid fa-circle-check"></i> US:</span> <strong style="color:var(--SmartThemeQuoteColor);">{CONFIRMED/MISSED}</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-solid fa-weight-scale"></i> Weight:</span> <strong style="color:var(--SmartThemeQuoteColor);">{X.X} kg</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-solid fa-ruler-vertical"></i> Height:</span> <strong style="color:var(--SmartThemeQuoteColor);">{XX} cm</strong></div>
-</div>
-<div style="margin-top:10px;border-top:1px solid var(--SmartThemeBorderColor);padding-top:8px;">
-<div style="margin-bottom:4px;"><span style="color:var(--SmartThemeQuoteColor);font-weight:bold;"><i class="fa-solid fa-dna"></i> Genetics:</span></div>
-<div style="font-size:0.9em;padding-left:10px;border-left:2px solid var(--SmartThemeBorderColor);margin-bottom:8px;">
-<span style="opacity:0.8;">Dominance:</span> <strong>{PARENT (XX%)}</strong><br>
-<span style="opacity:0.8;">Features:</span> {INHERITED FEATURES}<br>
-<span style="opacity:0.8;">Temperament:</span> {3 TRAITS}</div></div>
-<div style="margin-top:8px;background:rgba(0,0,0,0.15);padding:8px;border-radius:4px;">
-<div style="margin-bottom:4px;"><span style="color:#2a9d8f;"><i class="fa-solid fa-heart-pulse"></i> Health:</span> <span style="font-weight:bold;opacity:0.9;">{HEALTH STATUS}</span></div>
-<div><span style="color:#e76f51;"><i class="fa-solid fa-microscope"></i> Pathology:</span> <span style="opacity:0.9;font-style:italic;">{NONE or ISSUE}</span></div>
-</div></div>`,
-
-    babyCare: (hints) => `
-[BABY CARE - Update based on story events${hints.name ? ` | Name: ${hints.name}` : ''}${hints.age ? ` | Age: ${hints.age}` : ''}${hints.notes ? ` | Notes: ${hints.notes}` : ''}]
-<div style="background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:6px;padding:10px;margin-top:5px;margin-bottom:20px;font-family:'Courier New',monospace;font-size:0.85em;line-height:1.5;color:var(--SmartThemeBodyColor);">
-<div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:4px;padding-bottom:4px;font-weight:bold;color:var(--SmartThemeQuoteColor);text-transform:uppercase;letter-spacing:1px;">
-<i class="fa-solid fa-baby"></i> Baby Care</div>
-<div style="font-size:0.75em;text-transform:uppercase;margin-bottom:8px;color:var(--SmartThemeQuoteColor);opacity:0.8;">
-<i class="fa-solid fa-id-card"></i> {NAME} | {AGE}</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
-<div><span style="opacity:0.7;"><i class="fa-solid fa-utensils"></i> Hunger:</span> <strong style="color:var(--SmartThemeQuoteColor);">{FULL/HUNGRY/STARVING}</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-solid fa-soap"></i> Hygiene:</span> <strong style="color:var(--SmartThemeQuoteColor);">{CLEAN/SOILED}</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-solid fa-bed"></i> Energy:</span> <strong style="color:var(--SmartThemeQuoteColor);">{RESTED/TIRED}</strong></div>
-<div><span style="opacity:0.7;"><i class="fa-solid fa-face-smile"></i> Mood:</span> <strong style="color:var(--SmartThemeQuoteColor);">{HAPPY/FUSSY/CRYING}</strong></div>
-</div>
-<div style="margin-top:8px;border-top:1px dotted var(--SmartThemeBorderColor);padding-top:5px;">
-<div style="margin-bottom:4px;"><span style="color:var(--SmartThemeQuoteColor);"><i class="fa-solid fa-dna"></i> Traits:</span> <span style="opacity:0.9;">{PERSONALITY TRAITS}</span></div>
-<div style="margin-bottom:4px;"><span style="color:var(--SmartThemeQuoteColor);"><i class="fa-solid fa-star"></i> Milestone:</span> <span style="opacity:0.9;">{NEXT MILESTONE}</span></div>
-<div style="margin-bottom:4px;"><span style="color:var(--SmartThemeQuoteColor);"><i class="fa-solid fa-user-doctor"></i> Medical:</span> <span style="opacity:0.9;">{NEXT VISIT}</span></div>
-<div style="background:rgba(231,111,81,0.1);padding:3px;border-radius:3px;margin-top:5px;">
-<span style="color:#e76f51;"><i class="fa-solid fa-circle-exclamation"></i></span> <span style="opacity:0.9;font-style:italic;">{IMMEDIATE NEED}</span></div>
-</div></div>`
-};
-
-// ═══════════════════════════════════════════════════════════════
-//  SETTINGS FORMS
-// ═══════════════════════════════════════════════════════════════
-
-const FORMS = {
-    conception: `
-        <div class="lt-settings-header">
-            <span class="lt-settings-title"><i class="fa-solid fa-dice"></i> Conception</span>
-            <button class="lt-back-btn" id="lt-back"><i class="fa-solid fa-arrow-left"></i></button>
-        </div>
-        <div class="lt-hint">Optional hints for AI. Leave empty to let AI decide everything.</div>
-        <div class="lt-field">
-            <label>Story Date (optional)</label>
-            <input type="date" id="lt-date">
-        </div>
-        <div class="lt-field">
-            <label>Notes for AI</label>
-            <input type="text" id="lt-notes" placeholder="e.g., high fertility, use protection failed...">
-        </div>
-        <div class="lt-actions">
-            <button class="lt-btn lt-btn-primary" id="lt-insert" data-type="conception">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Insert for AI
-            </button>
-            <button class="lt-btn lt-btn-secondary" id="lt-cancel">
-                <i class="fa-solid fa-xmark"></i> Cancel
-            </button>
-        </div>`,
-
-    pregnancy: `
-        <div class="lt-settings-header">
-            <span class="lt-settings-title"><i class="fa-solid fa-person-pregnant"></i> Pregnancy</span>
-            <button class="lt-back-btn" id="lt-back"><i class="fa-solid fa-arrow-left"></i></button>
-        </div>
-        <div class="lt-hint">Optional hints. AI will fill everything else based on story.</div>
-        <div class="lt-field">
-            <label>Week (optional)</label>
-            <input type="text" id="lt-week" placeholder="e.g., 12">
-        </div>
-        <div class="lt-field">
-            <label>Notes for AI</label>
-            <input type="text" id="lt-notes" placeholder="e.g., twins, high risk, gender revealed...">
-        </div>
-        <div class="lt-actions">
-            <button class="lt-btn lt-btn-primary" id="lt-insert" data-type="pregnancy">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Insert for AI
-            </button>
-            <button class="lt-btn lt-btn-secondary" id="lt-cancel">
-                <i class="fa-solid fa-xmark"></i> Cancel
-            </button>
-        </div>`,
-
-    birth: `
-        <div class="lt-settings-header">
-            <span class="lt-settings-title"><i class="fa-solid fa-baby-carriage"></i> Birth</span>
-            <button class="lt-back-btn" id="lt-back"><i class="fa-solid fa-arrow-left"></i></button>
-        </div>
-        <div class="lt-hint">Optional hints. AI generates genetics and stats.</div>
-        <div class="lt-field">
-            <label>Notes for AI</label>
-            <input type="text" id="lt-notes" placeholder="e.g., premature, complications, healthy...">
-        </div>
-        <div class="lt-actions">
-            <button class="lt-btn lt-btn-primary" id="lt-insert" data-type="birth">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Insert for AI
-            </button>
-            <button class="lt-btn lt-btn-secondary" id="lt-cancel">
-                <i class="fa-solid fa-xmark"></i> Cancel
-            </button>
-        </div>`,
-
-    babyCare: `
-        <div class="lt-settings-header">
-            <span class="lt-settings-title"><i class="fa-solid fa-baby"></i> Baby Care</span>
-            <button class="lt-back-btn" id="lt-back"><i class="fa-solid fa-arrow-left"></i></button>
-        </div>
-        <div class="lt-hint">Optional hints. AI tracks needs based on story events.</div>
-        <div class="lt-field">
-            <label>Name (optional)</label>
-            <input type="text" id="lt-name" placeholder="Baby's name">
-        </div>
-        <div class="lt-field">
-            <label>Age (optional)</label>
-            <input type="text" id="lt-age" placeholder="e.g., 2 weeks, 3 months">
-        </div>
-        <div class="lt-field">
-            <label>Notes for AI</label>
-            <input type="text" id="lt-notes" placeholder="e.g., just fed, needs diaper, fussy...">
-        </div>
-        <div class="lt-actions">
-            <button class="lt-btn lt-btn-primary" id="lt-insert" data-type="babyCare">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Insert for AI
-            </button>
-            <button class="lt-btn lt-btn-secondary" id="lt-cancel">
-                <i class="fa-solid fa-xmark"></i> Cancel
-            </button>
-        </div>`
-};
-
-// ═══════════════════════════════════════════════════════════════
-//  HELPERS
-// ═══════════════════════════════════════════════════════════════
-
-function insertToTextarea(text) {
-    const textarea = document.getElementById('send_textarea');
-    if (textarea) {
-        const start = textarea.selectionStart;
-        const before = textarea.value.substring(0, start);
-        const after = textarea.value.substring(textarea.selectionEnd);
-        textarea.value = before + text + after;
-        textarea.selectionStart = textarea.selectionEnd = start + text.length;
-        textarea.focus();
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+@keyframes flt-slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-function closePopup() {
-    $('#lt-popup').removeClass('open');
-    $('#life-tracker-button').removeClass('active');
-    showMenu();
+/* Menu Header */
+.flt-menu-header {
+    background: color-mix(in srgb, var(--SmartThemeAccent) 15%, transparent);
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-function showMenu() {
-    $('#lt-menu').show();
-    $('#lt-settings').removeClass('open').empty();
+.flt-menu-title {
+    font-weight: bold;
+    color: var(--SmartThemeAccent);
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-function showSettings(type) {
-    $('#lt-menu').hide();
-    $('#lt-settings').html(FORMS[type]).addClass('open');
-    bindSettingsEvents(type);
+.flt-menu-close {
+    background: transparent;
+    border: none;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: all 0.2s;
 }
 
-function bindSettingsEvents(type) {
-    $('#lt-back').on('click', showMenu);
-    $('#lt-cancel').on('click', closePopup);
-
-    $('#lt-insert').on('click', function() {
-        const hints = {
-            date: $('#lt-date').val(),
-            week: $('#lt-week').val(),
-            name: $('#lt-name').val(),
-            age: $('#lt-age').val(),
-            notes: $('#lt-notes').val()
-        };
-
-        const template = TEMPLATES[type](hints);
-        insertToTextarea(template);
-        closePopup();
-    });
+.flt-menu-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════════════
+/* Tracker List */
+.flt-tracker-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px;
+}
 
-jQuery(async () => {
-    if (!extension_settings[extensionName]) {
-        extension_settings[extensionName] = {};
+.flt-tracker-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin: 4px 0;
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 12px;
+}
+
+.flt-tracker-item:hover {
+    background: color-mix(in srgb, var(--SmartThemeAccent) 10%, transparent);
+    border-color: var(--SmartThemeAccent);
+}
+
+.flt-tracker-item.active {
+    background: color-mix(in srgb, var(--SmartThemeAccent) 20%, transparent);
+    border-color: var(--SmartThemeAccent);
+}
+
+.flt-tracker-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--SmartThemeAccent) 20%, transparent);
+    border-radius: 50%;
+    color: var(--SmartThemeAccent);
+    font-size: 1em;
+    flex-shrink: 0;
+}
+
+.flt-tracker-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.flt-tracker-name {
+    font-weight: bold;
+    color: var(--SmartThemeBodyColor);
+    font-size: 0.9em;
+    margin-bottom: 2px;
+}
+
+.flt-tracker-desc {
+    font-size: 0.75em;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.6;
+}
+
+.flt-tracker-status {
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent);
+    color: var(--SmartThemeQuoteColor);
+}
+
+.flt-tracker-status.inactive {
+    background: color-mix(in srgb, var(--SmartThemeBorderColor) 30%, transparent);
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.5;
+}
+
+/* Undo Section */
+.flt-undo-section {
+    padding: 8px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+    display: none;
+}
+
+.flt-undo-section.show {
+    display: block;
+}
+
+.flt-undo-btn {
+    width: 100%;
+    padding: 10px;
+    background: color-mix(in srgb, #e76f51 20%, transparent);
+    border: 1px solid #e76f51;
+    border-radius: 6px;
+    color: #e76f51;
+    cursor: pointer;
+    font-size: 0.85em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.flt-undo-btn:hover {
+    background: color-mix(in srgb, #e76f51 30%, transparent);
+}
+
+/* Modal Overlay */
+.flt-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+}
+
+.flt-modal-overlay.show {
+    display: flex;
+    animation: flt-fadeIn 0.2s ease;
+}
+
+@keyframes flt-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modal Container */
+.flt-modal {
+    background: var(--SmartThemeBlurTintColor, #1a1a2e);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 12px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: flt-scaleIn 0.2s ease;
+}
+
+@keyframes flt-scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.flt-modal-header {
+    padding: 15px 20px;
+    background: color-mix(in srgb, var(--SmartThemeAccent) 15%, transparent);
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flt-modal-title {
+    font-weight: bold;
+    color: var(--SmartThemeAccent);
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.flt-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.flt-modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* Form Elements */
+.flt-form-group {
+    margin-bottom: 15px;
+}
+
+.flt-form-label {
+    display: block;
+    font-size: 0.85em;
+    color: var(--SmartThemeBodyColor);
+    margin-bottom: 6px;
+    opacity: 0.8;
+}
+
+.flt-form-input,
+.flt-form-select,
+.flt-form-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    color: var(--SmartThemeBodyColor);
+    font-size: 0.9em;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.flt-form-input:focus,
+.flt-form-select:focus,
+.flt-form-textarea:focus {
+    outline: none;
+    border-color: var(--SmartThemeAccent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--SmartThemeAccent) 20%, transparent);
+}
+
+.flt-form-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.flt-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Buttons */
+.flt-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid transparent;
+}
+
+.flt-btn-primary {
+    background: var(--SmartThemeAccent);
+    color: white;
+    border-color: var(--SmartThemeAccent);
+}
+
+.flt-btn-primary:hover {
+    filter: brightness(1.1);
+}
+
+.flt-btn-secondary {
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+    border-color: var(--SmartThemeBorderColor);
+}
+
+.flt-btn-secondary:hover {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+}
+
+.flt-btn-ai {
+    background: color-mix(in srgb, #2a9d8f 20%, transparent);
+    color: #2a9d8f;
+    border-color: #2a9d8f;
+}
+
+.flt-btn-ai:hover {
+    background: color-mix(in srgb, #2a9d8f 30%, transparent);
+}
+
+/* Toggle Switch */
+.flt-toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.flt-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--SmartThemeBorderColor);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.flt-toggle.active {
+    background: var(--SmartThemeAccent);
+}
+
+.flt-toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.flt-toggle.active::after {
+    left: 22px;
+}
+
+.flt-toggle-label {
+    font-size: 0.85em;
+    color: var(--SmartThemeBodyColor);
+}
+
+/* Section Divider */
+.flt-section-divider {
+    border: none;
+    border-top: 1px dashed var(--SmartThemeBorderColor);
+    margin: 20px 0;
+}
+
+.flt-section-title {
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--SmartThemeAccent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Preview Box */
+.flt-preview-box {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, transparent);
+    border: 1px dashed var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.flt-preview-title {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    color: var(--SmartThemeAccent);
+    margin-bottom: 10px;
+    opacity: 0.8;
+}
+
+/* Info Box */
+.flt-info-box {
+    background: color-mix(in srgb, var(--SmartThemeAccent) 10%, transparent);
+    border-left: 3px solid var(--SmartThemeAccent);
+    padding: 12px;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 15px;
+    font-size: 0.85em;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.9;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    #flt-popup-menu {
+        position: fixed;
+        bottom: 60px;
+        left: 10px;
+        right: 10px;
+        max-width: none;
+        margin-bottom: 0;
     }
 
-    // Create wrapper with button and popup
-    const html = `
-    <div id="lt-wrapper">
-        <div id="life-tracker-button" class="fa-solid fa-heart-pulse" title="Life Tracker"></div>
-        <div id="lt-popup">
-            <div class="lt-menu" id="lt-menu">
-                <button class="lt-menu-item" data-type="conception">
-                    <i class="fa-solid fa-dice"></i> Conception Roll
-                </button>
-                <button class="lt-menu-item" data-type="pregnancy">
-                    <i class="fa-solid fa-person-pregnant"></i> Pregnancy
-                </button>
-                <button class="lt-menu-item" data-type="birth">
-                    <i class="fa-solid fa-baby-carriage"></i> Birth Report
-                </button>
-                <button class="lt-menu-item" data-type="babyCare">
-                    <i class="fa-solid fa-baby"></i> Baby Care
-                </button>
-            </div>
-            <div class="lt-settings" id="lt-settings"></div>
-        </div>
-    </div>`;
+    .flt-modal {
+        max-height: 90vh;
+        margin: 10px;
+    }
 
-    $('#leftSendForm').prepend(html);
+    .flt-form-row {
+        grid-template-columns: 1fr;
+    }
 
-    // Toggle popup
-    $('#life-tracker-button').on('click', (e) => {
-        e.stopPropagation();
-        const isOpen = $('#lt-popup').hasClass('open');
-        if (isOpen) {
-            closePopup();
-        } else {
-            $('#lt-popup').addClass('open');
-            $('#life-tracker-button').addClass('active');
-        }
-    });
+    .flt-modal-footer {
+        flex-direction: column;
+    }
 
-    // Menu item click
-    $('.lt-menu-item').on('click', function() {
-        showSettings($(this).data('type'));
-    });
+    .flt-btn {
+        width: 100%;
+        justify-content: center;
+    }
 
-    // Close on outside click
-    $(document).on('click', (e) => {
-        if (!$(e.target).closest('#lt-wrapper').length) {
-            closePopup();
-        }
-    });
+    #flt-main-button span.flt-btn-text {
+        display: none;
+    }
+}
 
-    // Close on Escape
-    $(document).on('keydown', (e) => {
-        if (e.key === 'Escape') closePopup();
-    });
+/* Scrollbar Styling */
+.flt-tracker-list::-webkit-scrollbar,
+.flt-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
 
-    console.log('[Life Tracker] Ready');
-});
+.flt-tracker-list::-webkit-scrollbar-track,
+.flt-modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.flt-tracker-list::-webkit-scrollbar-thumb,
+.flt-modal-body::-webkit-scrollbar-thumb {
+    background: var(--SmartThemeBorderColor);
+    border-radius: 3px;
+}
+
+.flt-tracker-list::-webkit-scrollbar-thumb:hover,
+.flt-modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--SmartThemeAccent);
+}
+
+/* Notification Toast */
+.flt-toast {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background: var(--SmartThemeBlurTintColor, #1a1a2e);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    padding: 12px 20px;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: flt-slideIn 0.3s ease;
+}
+
+.flt-toast.success {
+    border-left: 3px solid #2a9d8f;
+}
+
+.flt-toast.error {
+    border-left: 3px solid #e76f51;
+}
+
+.flt-toast.hiding {
+    animation: flt-slideOut 0.3s ease forwards;
+}
+
+@keyframes flt-slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes flt-slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+/* Chip/Tag Style */
+.flt-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: color-mix(in srgb, var(--SmartThemeAccent) 15%, transparent);
+    border-radius: 20px;
+    font-size: 0.75em;
+    color: var(--SmartThemeAccent);
+    margin: 2px;
+}
+
+/* Data Display in Tracker Items */
+.flt-tracker-data {
+    font-size: 0.7em;
+    color: var(--SmartThemeQuoteColor);
+    margin-top: 4px;
+}
