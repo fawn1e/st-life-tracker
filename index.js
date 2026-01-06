@@ -615,18 +615,18 @@ function showToast(message, type = 'success') {
         transform: translateX(-50%);
         background: var(--SmartThemeBlurTintColor);
         border: 1px solid var(--SmartThemeBorderColor);
-        border-left: 4px solid ${colors[type]};
-        border-radius: 8px;
-        padding: 12px 24px;
+        border-left: 3px solid ${colors[type]};
+        border-radius: 6px;
+        padding: 8px 16px;
         z-index: 10001;
         display: flex;
         align-items: center;
-        gap: 10px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        gap: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         color: var(--SmartThemeBodyColor);
-        font-size: 14px;
+        font-size: 13px;
         animation: flt-toastIn 0.3s ease;
-        max-width: 90vw;
+        white-space: nowrap;
     `;
 
     document.body.appendChild(toast);
@@ -634,7 +634,7 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.style.animation = 'flt-toastOut 0.3s ease forwards';
         setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    }, 2500);
 }
 
 /* ═══════════════════════════════════════════════════════════════
