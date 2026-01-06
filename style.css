@@ -29,29 +29,11 @@
     animation: flt-fadeIn 0.3s ease;
 }
 
-/* Mobile Fix - Universal for Menu and Trackers */
+/* Mobile menu fix */
 @media (max-width: 768px) {
-    /* Применяем стили и к главному меню (#flt-menu), и к окнам трекеров (.flt-tracker-container) */
-    #flt-menu, 
-    .flt-tracker-container {
-        /* 1. ЖЕСТКОЕ ЦЕНТРИРОВАНИЕ */
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        
-        /* 2. РАЗМЕРЫ ДЛЯ ТЕЛЕФОНА */
-        width: 90vw !important;        /* Ширина 90% экрана (чтобы не было узкой полоски) */
-        max-width: 450px !important;   /* Но не шире, чем на ПК */
-        
-        /* 3. ВЫСОТА И СКРОЛЛ (Самое важное) */
-        height: auto !important;       /* Высота подстраивается под контент... */
-        max-height: 80vh !important;   /* ...но не более 80% высоты экрана */
-        overflow-y: auto !important;   /* Если контента больше — появляется скролл */
-        
-        /* Сброс лишних отступов, которые могли ломать позицию */
-        margin: 0 !important;
-        right: auto !important;
-        bottom: auto !important;
+    #flt-menu {
+        min-width: calc(100vw - 40px) !important;
+        left: 20px !important;
+        right: 20px !important;
     }
 }
