@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   FAWN'S LIFE TRACKER v2.0
-   Mobile-friendly, flexible dates, AI/Roll modes
+   FAWN'S LIFE TRACKER v2.1
+   FULL WORKING VERSION
    ═══════════════════════════════════════════════════════════════ */
 
 import { extension_settings, getContext } from "../../../extensions.js";
@@ -243,7 +243,7 @@ function closePopup() {
     document.body.style.overflow = '';
     document.body.style.position = '';
     document.body.style.width = '';
-    currentFormTracker = null; // <-- ОЧИЩАЕМ
+    currentFormTracker = null;
 }
 
 function createPopup(content, width = "500px") {
@@ -286,11 +286,6 @@ function createPopup(content, width = "500px") {
     const escHandler = (e) => { if (e.key === 'Escape') { closePopup(); document.removeEventListener('keydown', escHandler); } };
     document.addEventListener('keydown', escHandler);
 
-    setTimeout(() => {
-        const firstInput = popup.querySelector('textarea, input[type="text"], input[type="number"], select');
-        if (firstInput) firstInput.focus();
-    }, 100);
-
     return popup;
 }
 
@@ -321,7 +316,6 @@ ${d.result === 'Yes' ? 'Character NOW PREGNANT but may not know. Show subtle sig
 `;
             }
 
-            // Due date instructions
             if (d.dateMode === 'ai') {
                 prompt += `Due Date: YOU calculate based on your world's calendar (+280 days from conception)\n`;
             } else if (d.dateMode === 'lore' && d.loreDate) {
@@ -338,13 +332,12 @@ ${d.result === 'Yes' ? 'Character NOW PREGNANT but may not know. Show subtle sig
         case 'pregnancy':
             const week = parseInt(d.week) || 1;
             prompt += `PREGNANCY - Week ${week}, Size: ${BABY_SIZES[week] || '??'}
-Update weekly: symptoms, size, risks, nextVisit, testsNeeded
+Update weekly: symptoms, size, risks, risksDetails, nextVisit, testsNeeded
 Gender: ultrasoundGender can be WRONG (${s.ultrasoundErrorChance}% chance)
 ${s.miscarriageEnabled ? 'Miscarriage possible if High/Critical risks' : ''}
 ${s.autoLaborEnabled && week >= 37 ? 'LABOR can start anytime!' : ''}
 
 `;
-            // Due date instructions for pregnancy
             if (d.dateMode === 'ai') {
                 prompt += `Due Date: YOU decide based on story context\n`;
             } else if (d.dateMode === 'lore' && d.loreStartDate) {
@@ -355,7 +348,7 @@ ${s.autoLaborEnabled && week >= 37 ? 'LABOR can start anytime!' : ''}
                 prompt += `Due Date: ${d.dueDate} (auto-calculated from system time)\n`;
             }
 
-            prompt += `\n[TRACKER:pregnancy|week=${week}|size=${BABY_SIZES[week] || '??'}|knowledge=${d.knowledge || '??'}|ultrasoundGender=${d.ultrasoundGender || '??'}|symptoms=??|risks=${d.risks || 'Stable'}|nextVisit=??|testsNeeded=??|dueDate=${d.dueDate || '??'}]`;
+            prompt += `\n[TRACKER:pregnancy|week=${week}|size=${BABY_SIZES[week] || '??'}|knowledge=${d.knowledge || '??'}|ultrasoundGender=${d.ultrasoundGender || '??'}|symptoms=??|risks=${d.risks || 'Stable'}|risksDetails=${d.risksDetails || ''}|nextVisit=${d.nextVisit || '??'}|testsNeeded=${d.testsNeeded || '??'}|dueDate=${d.dueDate || '??'}]`;
             break;
 
         case 'birth':
@@ -401,13 +394,13 @@ function generateTrackerHTML(trackerId, data) {
     const m = window.innerWidth <= 768;
     const baseStyle = `font-family:'Courier New',monospace;font-size:${m ? '0.8em' : '0.85em'};color:var(--SmartThemeBodyColor);`;
 
-    switch (trackerId.toLowerCase()) {
+    switch ((trackerId || '').toLowerCase()) {
         case 'conception': return genConceptionHTML(data, baseStyle);
         case 'pregnancy': return genPregnancyHTML(data, baseStyle, m);
         case 'birth': return genBirthHTML(data, baseStyle, m);
         case 'babycare': return genBabyCareHTML(data, baseStyle, m);
         case 'miscarriage': return genMiscarriageHTML(data, baseStyle, m);
-        default: return '';
+        default: return '<div style="opacity:0.5;text-align:center;padding:20px;">Select a tracker</div>';
     }
 }
 
@@ -449,8 +442,11 @@ function genPregnancyHTML(d, baseStyle, m) {
             <div><span style="opacity:0.5;font-size:0.85em;">Gender</span><br><strong>${d.ultrasoundGender || '??'}</strong></div>
         </div>
         ${d.symptoms ? `<div style="padding:8px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-head-side-virus" style="opacity:0.5;"></i> ${d.symptoms}</div>` : ''}
-        ${d.nextVisit ? `<div style="padding:8px;background:color-mix(in srgb,#2196f3 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-calendar-check" style="color:#2196f3;"></i> Next: ${d.nextVisit}${d.testsNeeded ? ` • ${d.testsNeeded}` : ''}</div>` : ''}
-        <div style="padding:8px 10px;background:color-mix(in srgb,${riskColor} 15%,transparent);border-left:3px solid ${riskColor};border-radius:0 6px 6px 0;"><span style="color:${riskColor};font-weight:bold;"><i class="fa-solid fa-heart-pulse"></i> ${d.risks || 'Stable'}</span></div>
+        ${d.nextVisit || d.testsNeeded ? `<div style="padding:8px;background:color-mix(in srgb,#2196f3 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-calendar-check" style="color:#2196f3;"></i> ${d.nextVisit ? `Next: ${d.nextVisit}` : ''}${d.nextVisit && d.testsNeeded ? ' • ' : ''}${d.testsNeeded ? `Tests: ${d.testsNeeded}` : ''}</div>` : ''}
+        <div style="padding:8px 10px;background:color-mix(in srgb,${riskColor} 15%,transparent);border-left:3px solid ${riskColor};border-radius:0 6px 6px 0;">
+            <span style="color:${riskColor};font-weight:bold;"><i class="fa-solid fa-heart-pulse"></i> ${d.risks || 'Stable'}</span>
+            ${d.risksDetails ? `<div style="font-size:0.85em;opacity:0.8;margin-top:4px;">${d.risksDetails}</div>` : ''}
+        </div>
     </div>`;
 }
 
@@ -526,7 +522,6 @@ function processAIResponse(messageIndex) {
     const parsed = parseTrackerFromText(message.mes);
     if (!parsed) return;
 
-    // Keep mode settings when updating
     const preserveKeys = ['mode', 'dateMode', 'loreDate', 'loreStartDate'];
     const preserved = {};
     preserveKeys.forEach(k => { if (state.data[k]) preserved[k] = state.data[k]; });
@@ -599,7 +594,7 @@ function showTrackerForm(trackerId) {
     const tracker = TRACKERS[trackerId];
     if (!tracker) return;
 
-    currentFormTracker = trackerId; // <-- ЗАПОМИНАЕМ
+    currentFormTracker = trackerId;
 
     const m = window.innerWidth <= 768;
     const savedData = state.active === trackerId ? state.data : {};
@@ -641,6 +636,7 @@ function showTrackerForm(trackerId) {
 
     createPopup(content, "600px");
 
+    // Setup input listeners for live preview
     document.querySelectorAll('#flt-form input, #flt-form select, #flt-form textarea').forEach(el => {
         el.addEventListener('input', () => updatePreview(currentFormTracker));
         el.addEventListener('change', () => updatePreview(currentFormTracker));
@@ -676,7 +672,7 @@ function buildConceptionForm(data) {
         </div>
 
         <!-- Roll Section -->
-        <div id="flt-roll-section" style="display:${mode === 'roll' ? 'block' : 'none'};text-align:center;padding:15px 0;border:1px dashed var(--SmartThemeBorderColor);border-radius:10px;margin-bottom:20px;">
+        <div id="flt-roll-section" style="display:${mode === 'roll' ? 'block' : 'none'};text-align:center;padding:15px;border:1px dashed var(--SmartThemeBorderColor);border-radius:10px;margin-bottom:20px;">
             <div style="margin-bottom:15px;">
                 <label style="font-size:13px;opacity:0.7;display:block;margin-bottom:8px;">Conception Chance</label>
                 <input type="range" id="flt-threshold" name="threshold" min="1" max="100" value="${threshold}" style="width:80%;max-width:250px;">
@@ -715,17 +711,21 @@ function buildConceptionForm(data) {
                 ${dateModeButton('manual', 'fa-solid fa-pen', 'Manual', dateMode === 'manual')}
             </div>
 
+            <div id="flt-date-ai" style="display:${dateMode === 'ai' ? 'block' : 'none'};padding:10px;background:color-mix(in srgb,var(--SmartThemeAccent) 10%,transparent);border-radius:8px;font-size:12px;">
+                <i class="fa-solid fa-info-circle"></i> AI will calculate due date based on your world's calendar
+            </div>
+
             <div id="flt-date-system" style="display:${dateMode === 'system' ? 'block' : 'none'};padding:10px;background:color-mix(in srgb,var(--SmartThemeAccent) 10%,transparent);border-radius:8px;font-size:12px;">
                 <i class="fa-solid fa-info-circle"></i> Due date: <strong>${formatDate(calculateDueDate())}</strong> (280 days from now)
             </div>
 
             <div id="flt-date-lore" style="display:${dateMode === 'lore' ? 'block' : 'none'};margin-top:10px;">
-                <input type="text" id="flt-lore-date-input" name="loreDate" value="${data.loreDate || ''}" placeholder="e.g., March 15, Year 847" style="width:100%;padding:${m ? '12px' : '10px'};background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);font-size:${m ? '14px' : '13px'};box-sizing:border-box;">
+                <input type="text" name="loreDate" value="${data.loreDate || ''}" placeholder="e.g., March 15, Year 847" style="width:100%;padding:${m ? '12px' : '10px'};background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);font-size:${m ? '14px' : '13px'};box-sizing:border-box;">
                 <div style="font-size:11px;opacity:0.5;margin-top:6px;">AI adds 280 days to this date</div>
             </div>
 
             <div id="flt-date-manual" style="display:${dateMode === 'manual' ? 'block' : 'none'};margin-top:10px;">
-                <input type="text" id="flt-manual-due-input" name="dueDate" value="${data.dueDate || ''}" placeholder="e.g., December 20, Year 847" style="width:100%;padding:${m ? '12px' : '10px'};background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);font-size:${m ? '14px' : '13px'};box-sizing:border-box;">
+                <input type="text" name="dueDate" value="${data.dueDate || ''}" placeholder="e.g., December 20, Year 847" style="width:100%;padding:${m ? '12px' : '10px'};background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);font-size:${m ? '14px' : '13px'};box-sizing:border-box;">
             </div>
         </div>
 
@@ -764,7 +764,7 @@ function buildPregnancyForm(data) {
             </div>
 
             <div id="flt-date-system" style="display:${dateMode === 'system' ? 'block' : 'none'};padding:10px;background:color-mix(in srgb,var(--SmartThemeAccent) 10%,transparent);border-radius:8px;font-size:12px;">
-                <i class="fa-solid fa-info-circle"></i> Calculated from current week: <strong id="flt-system-due">${week ? formatDate(calculateDueDate(new Date(), parseInt(week))) : '(enter week)'}</strong>
+                <i class="fa-solid fa-info-circle"></i> Calculated from current week: <strong id="flt-system-due">${week ? formatDate(calculateDueDate(new Date(), parseInt(week))) : '(enter week first)'}</strong>
             </div>
 
             <div id="flt-date-lore" style="display:${dateMode === 'lore' ? 'block' : 'none'};margin-top:10px;">
@@ -779,14 +779,27 @@ function buildPregnancyForm(data) {
 
         <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
 
+        <!-- Basic Info -->
         ${formGrid(2, `
             ${formField('Current Week (1-42)', numberInput('week', data.week || '', '1', '42', 'Week of pregnancy'), 'fa-solid fa-calendar-week')}
             ${formField('Knowledge', selectInput('knowledge', ['Hidden', 'Suspected', 'Confirmed'], data.knowledge || 'Hidden'), 'fa-solid fa-eye')}
-            ${formField('Ultrasound Gender', selectInput('ultrasoundGender', ['Unknown', 'Boy', 'Girl'], data.ultrasoundGender || 'Unknown'), 'fa-solid fa-venus-mars')}
+            ${formField('Ultrasound Gender', selectInput('ultrasoundGender', ['Unknown', 'Boy', 'Girl', 'Twins (Boys)', 'Twins (Girls)', 'Twins (Mixed)'], data.ultrasoundGender || 'Unknown'), 'fa-solid fa-venus-mars')}
             ${formField('Risk Level', selectInput('risks', ['Stable', 'Mild Concern', 'Moderate Risk', 'High Risk', 'Critical'], data.risks || 'Stable'), 'fa-solid fa-heart-pulse')}
         `)}
 
-        ${formField('Current Symptoms', textareaInput('symptoms', data.symptoms || '', 'Leave empty for AI to fill based on week'), 'fa-solid fa-head-side-virus')}
+        <!-- Risk Details -->
+        ${formField('Risk Details / Complications', textInput('risksDetails', data.risksDetails || '', 'e.g., gestational diabetes, preeclampsia...'), 'fa-solid fa-triangle-exclamation')}
+
+        <!-- Symptoms -->
+        ${formField('Current Symptoms', textareaInput('symptoms', data.symptoms || '', 'Leave empty for AI to fill based on week', 2), 'fa-solid fa-head-side-virus')}
+
+        <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
+
+        <!-- Medical -->
+        ${formGrid(2, `
+            ${formField('Next Visit', textInput('nextVisit', data.nextVisit || '', 'e.g., In 2 weeks, March 20...'), 'fa-solid fa-calendar-check')}
+            ${formField('Tests Needed', textInput('testsNeeded', data.testsNeeded || '', 'e.g., Glucose screening, ultrasound...'), 'fa-solid fa-vial')}
+        `)}
 
         <input type="hidden" name="dateMode" id="flt-date-mode" value="${dateMode}">
     `;
@@ -834,7 +847,6 @@ function buildMiscarriageForm(data) {
    ═══════════════════════════════════════════════════════════════ */
 
 function setupTrackerHandlers(trackerId, data) {
-    // Date mode buttons (shared)
     setupDateModeHandlers();
 
     if (trackerId === 'conception') {
@@ -853,7 +865,6 @@ function setupDateModeHandlers() {
             const dateModeInput = document.getElementById('flt-date-mode');
             if (dateModeInput) dateModeInput.value = mode;
 
-            // Update button styles
             document.querySelectorAll('.flt-date-mode').forEach(b => {
                 const isActive = b.dataset.datemode === mode;
                 b.style.border = `2px solid ${isActive ? 'var(--SmartThemeAccent)' : 'var(--SmartThemeBorderColor)'}`;
@@ -861,13 +872,11 @@ function setupDateModeHandlers() {
                 b.style.opacity = isActive ? '1' : '0.6';
             });
 
-            // Show/hide sections
             ['ai', 'system', 'lore', 'manual'].forEach(m => {
                 const el = document.getElementById(`flt-date-${m}`);
                 if (el) el.style.display = m === mode ? 'block' : 'none';
             });
 
-            // Use the stored tracker ID - НЕ FALLBACK НА CONCEPTION!
             if (currentFormTracker) {
                 updatePreview(currentFormTracker);
             }
@@ -876,12 +885,10 @@ function setupDateModeHandlers() {
 }
 
 function setupConceptionHandlers(data) {
-    // Mode toggle (Roll vs AI)
     ['roll', 'ai'].forEach(mode => {
         document.getElementById(`flt-mode-${mode}`)?.addEventListener('click', function() {
             document.getElementById('flt-mode').value = mode;
 
-            // Update button styles
             ['roll', 'ai'].forEach(m => {
                 const btn = document.getElementById(`flt-mode-${m}`);
                 if (btn) {
@@ -893,28 +900,24 @@ function setupConceptionHandlers(data) {
                 }
             });
 
-            // Show/hide sections
             document.getElementById('flt-roll-section').style.display = mode === 'roll' ? 'block' : 'none';
             document.getElementById('flt-ai-section').style.display = mode === 'ai' ? 'block' : 'none';
 
-            // Clear roll if switching to AI
             if (mode === 'ai') {
                 document.getElementById('flt-roll').value = '';
                 document.getElementById('flt-result').value = '';
             }
 
-            updatePreview('conception');
+            updatePreview(currentFormTracker);
         });
     });
 
-    // Threshold slider
     const slider = document.getElementById('flt-threshold');
     const display = document.getElementById('flt-threshold-display');
     slider?.addEventListener('input', () => {
         display.textContent = slider.value + '%';
     });
 
-    // Roll button
     document.getElementById('flt-roll-btn')?.addEventListener('click', () => {
         const threshold = parseInt(slider?.value) || 20;
         const roll = Math.floor(Math.random() * 100) + 1;
@@ -923,7 +926,6 @@ function setupConceptionHandlers(data) {
         document.getElementById('flt-roll').value = roll;
         document.getElementById('flt-result').value = success ? 'Yes' : 'No';
 
-        // Update due date if system mode
         const dateMode = document.getElementById('flt-date-mode')?.value;
         if (dateMode === 'system' && success) {
             const dueDateInput = document.querySelector('[name="dueDate"]');
@@ -939,12 +941,11 @@ function setupConceptionHandlers(data) {
             <div style="font-size:18px;margin-top:10px;color:${success ? '#4caf50' : '#e76f51'};font-weight:bold;">${success ? '✓ Conceived!' : '✗ Not this time'}</div>
         `;
 
-        updatePreview('conception');
+        updatePreview(currentFormTracker);
     });
 }
 
 function setupPregnancyHandlers(data) {
-    // Week change -> update system due date
     const weekInput = document.querySelector('[name="week"]');
     weekInput?.addEventListener('input', () => {
         const week = parseInt(weekInput.value) || 0;
@@ -952,7 +953,7 @@ function setupPregnancyHandlers(data) {
         if (systemDue && week > 0) {
             systemDue.textContent = formatDate(calculateDueDate(new Date(), week));
         }
-        updatePreview('pregnancy');
+        updatePreview(currentFormTracker);
     });
 }
 
@@ -963,7 +964,6 @@ function getFormData() {
         if (value && value.trim()) data[key] = value.trim();
     });
 
-    // Handle system date mode for pregnancy
     if (data.dateMode === 'system' && data.week) {
         data.dueDate = formatDate(calculateDueDate(new Date(), parseInt(data.week)));
     }
@@ -972,8 +972,11 @@ function getFormData() {
 }
 
 function updatePreview(trackerId) {
+    if (!trackerId) return;
     const preview = document.getElementById('flt-preview');
-    if (preview) preview.innerHTML = generateTrackerHTML(trackerId, getFormData());
+    if (preview) {
+        preview.innerHTML = generateTrackerHTML(trackerId, getFormData());
+    }
 }
 
 function startTracker(trackerId, formData) {
@@ -1201,7 +1204,6 @@ jQuery(() => {
     setTimeout(() => { addMenu(); if (state.active) updateSystemPrompt(); renderAllTrackers(); updateMenuState(); }, 1000);
     setTimeout(() => { addMenu(); renderAllTrackers(); updateMenuState(); }, 3000);
 
-    // Inject CSS animations
     const style = document.createElement('style');
     style.textContent = `
         @keyframes flt-toastIn { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
@@ -1212,5 +1214,5 @@ jQuery(() => {
     `;
     document.head.appendChild(style);
 
-    console.log("Fawn's Life Tracker v2.0: Ready! 🦌");
+    console.log("Fawn's Life Tracker v2.1: Ready! 🦌");
 });
