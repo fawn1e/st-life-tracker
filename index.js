@@ -881,12 +881,22 @@ function setupBabyCareHandlers(data) {
         }
     });
 
-    // Обновление превью при изменении полей
+     // ОБНОВЛЕНИЕ ПРЕВЬЮ ПРИ ИЗМЕНЕНИИ ПОЛЕЙ
     const form = document.getElementById('flt-form');
     if (form) {
         form.addEventListener('input', () => updatePreview('babyCare'));
         form.addEventListener('change', () => updatePreview('babyCare'));
     }
+
+    // ИЛИ добавьте обработчики на каждое поле:
+    const fields = ['babyName', 'babyAge', 'babyHunger', 'babyHygiene', 'babyEnergy', 'babyMood', 'babyHealth'];
+    fields.forEach(fieldName => {
+        const field = document.querySelector(`[name="${fieldName}"]`);
+        if (field) {
+            field.addEventListener('input', () => updatePreview('babyCare'));
+            field.addEventListener('change', () => updatePreview('babyCare'));
+        }
+    });
 }
 
 function getFormData() {
