@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    FAWN'S LIFE TRACKER
-   All trackers + Start anywhere + AI autonomous after start
+   All trackers + Full medical details + AI autonomous
    ═══════════════════════════════════════════════════════════════ */
 
 import { extension_settings, getContext } from "../../../extensions.js";
@@ -13,7 +13,8 @@ const defaultSettings = {
     enabled: true,
     conceptionThreshold: 20,
     miscarriageEnabled: true,
-    autoLaborEnabled: true
+    autoLaborEnabled: true,
+    ultrasoundErrorChance: 5
 };
 
 if (!extension_settings[extensionName]) {
@@ -37,6 +38,19 @@ const BABY_SIZES = {
     37: 'Swiss chard', 38: 'Leek', 39: 'Watermelon', 40: 'Pumpkin',
     41: 'Watermelon+', 42: 'Jackfruit'
 };
+
+// Recommended tests by trimester
+const PREGNANCY_TESTS = {
+    first: ['Blood type & Rh', 'CBC', 'HIV/Hepatitis', 'Rubella immunity', 'First trimester screening', 'NT ultrasound (11-13w)'],
+    second: ['Anatomy scan (18-22w)', 'Glucose screening (24-28w)', 'Quad screen', 'Amniocentesis (if indicated)'],
+    third: ['Group B strep (35-37w)', 'Non-stress test', 'Biophysical profile', 'Growth ultrasound']
+};
+
+const CONGENITAL_CONDITIONS = [
+    'None', 'Heart defect', 'Cleft lip/palate', 'Down syndrome', 'Spina bifida',
+    'Clubfoot', 'Hip dysplasia', 'Hearing impairment', 'Vision impairment',
+    'Chromosomal abnormality', 'Other (specify)'
+];
 
 const TRACKERS = {
     conception: {
@@ -85,7 +99,9 @@ let state = {
     data: {},
     history: [],
     lastMessageId: null,
-    dueDate: null
+    dueDate: null,
+    actualGender: null, // Real gender (may differ from ultrasound)
+    ultrasoundGender: null // What ultrasound showed (can be wrong!)
 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -109,82 +125,97 @@ Do NOT write HTML yourself.
         case 'conception':
             prompt += `CONCEPTION ATTEMPT
 Result: ${state.data.result || 'Pending'}
-${state.data.result === 'Yes' ? `Character is NOW PREGNANT but doesn't know yet. Show subtle early signs (fatigue, mood changes). Due date: ${state.data.dueDate || '??'}` : ''}
+${state.data.result === 'Yes' ? `Character is NOW PREGNANT but doesn't know yet. Show subtle early signs. Due date: ${state.data.dueDate || '??'}` : ''}
 
 [TRACKER:conception|roll=${state.data.roll || '??'}|threshold=${state.data.threshold || 20}|result=${state.data.result || '??'}|dueDate=${state.data.dueDate || '??'}]`;
             break;
 
         case 'pregnancy':
-            const week = state.data.week || 1;
-            const size = BABY_SIZES[parseInt(week)] || '??';
-            prompt += `PREGNANCY TRACKING - Current: Week ${week}
-Data: ${JSON.stringify(state.data)}
+            const week = parseInt(state.data.week) || 1;
+            const size = BABY_SIZES[week] || '??';
+            const trimester = week <= 13 ? 'first' : week <= 26 ? 'second' : 'third';
+            const recommendedTests = PREGNANCY_TESTS[trimester].join(', ');
 
-YOUR TASKS (update based on RP events):
-• week: Increment when time passes in RP (days/weeks mentioned)
-• size: Use appropriate size for week (current: ${size})
-• knowledge: Hidden → Suspected → Confirmed (as character realizes)
-• gender: Unknown until ultrasound or birth (or surprise!)
-• symptoms: Update based on what character experiences
+            prompt += `PREGNANCY TRACKING - Week ${week}, Trimester ${trimester === 'first' ? '1st' : trimester === 'second' ? '2nd' : '3rd'}
+Current data: ${JSON.stringify(state.data)}
+
+YOUR TASKS:
+• week: Increment when time passes in RP
+• size: ${size} for week ${week}
+• knowledge: Hidden → Suspected → Confirmed
+• symptoms: Based on week and events
 • risks: Stable/Mild Concern/Moderate Risk/High Risk/Critical
-• riskDetails: Explain any risks
+• riskDetails: Explain risks
+• nextVisit: When is next checkup
+• testsNeeded: What tests/procedures are due (recommended for this trimester: ${recommendedTests})
 
-AUTOMATIC EVENTS:
-${s.miscarriageEnabled ? `• MISCARRIAGE: If risks are High/Critical AND character ignores medical advice or experiences trauma, you MAY switch to [TRACKER:miscarriage|...]. Use sparingly and dramatically.` : ''}
-${s.autoLaborEnabled ? `• LABOR: When week ≥ 37, labor can start. When it does, switch to [TRACKER:birth|...]` : ''}
+GENDER & ULTRASOUND:
+• ultrasoundGender: What ultrasound shows (can be WRONG! ${s.ultrasoundErrorChance}% error chance)
+• actualGender: Real gender - ${state.actualGender ? `LOCKED as ${state.actualGender}` : 'NOT YET DETERMINED - you decide when first ultrasound happens'}
+${state.actualGender && state.ultrasoundGender && state.actualGender !== state.ultrasoundGender ? '⚠️ ULTRASOUND IS WRONG! Real gender will be revealed at birth!' : ''}
 
-TRACKER LINE (fill all ??):
-[TRACKER:pregnancy|week=??|size=??|knowledge=??|gender=??|symptoms=??|risks=??|riskDetails=??|dueDate=${state.data.dueDate || '??'}]`;
+${s.miscarriageEnabled ? `MISCARRIAGE: If risks are High/Critical AND character ignores advice or trauma occurs, you MAY switch to [TRACKER:miscarriage|...]. Use sparingly.` : ''}
+${s.autoLaborEnabled ? `LABOR: Week ≥37 = can start labor. Switch to [TRACKER:birth|...]` : ''}
+
+[TRACKER:pregnancy|week=??|size=??|knowledge=??|ultrasoundGender=??|symptoms=??|risks=??|riskDetails=??|nextVisit=??|testsNeeded=??|dueDate=${state.data.dueDate || '??'}]`;
             break;
 
         case 'birth':
             prompt += `BIRTH/LABOR IN PROGRESS
-${state.data.name ? `Baby name: ${state.data.name}` : 'Generate a name based on characters/culture'}
-${state.data.gender && state.data.gender !== 'Unknown' ? `Gender: ${state.data.gender}` : 'Determine gender'}
+${state.data.name ? `Baby name: ${state.data.name}` : 'Generate name based on characters/culture'}
+
+GENDER: ${state.actualGender ? `CONFIRMED ${state.actualGender}` : state.ultrasoundGender ? `Ultrasound said ${state.ultrasoundGender} but VERIFY at birth!` : 'Determine now'}
+${state.actualGender && state.ultrasoundGender && state.actualGender !== state.ultrasoundGender ? `🎉 SURPRISE! Ultrasound was WRONG! Baby is actually ${state.actualGender}!` : ''}
 
 Generate realistic newborn data:
-• weight: 2.5-4.5 kg typical
+• weight: 2.5-4.5 kg typical (preterm = lower)
 • height: 45-55 cm typical
-• hair/eyes: Based on parent genetics if known
+• hair/eyes: Based on parent genetics
 • features: Mix of parent features
-• health: Usually Healthy, complications if dramatic
-• time: Time of birth
-• temperament: First impressions (calm, fussy, alert...)
+• apgar: APGAR score 1-10 (7+ is good)
+• health: Healthy / Needs observation / Critical
+• congenitalConditions: Any birth defects or conditions (usually None, but can occur)
+• birthComplications: Any complications during delivery
 
-After birth completes, switch to [TRACKER:babyCare|...] for ongoing tracking.
+After birth, switch to [TRACKER:babyCare|...]
 
-[TRACKER:birth|name=??|gender=??|weight=??|height=??|hair=??|eyes=??|features=??|health=??|time=??|temperament=??]`;
+[TRACKER:birth|name=??|gender=??|weight=??|height=??|hair=??|eyes=??|features=??|apgar=??|health=??|congenitalConditions=??|birthComplications=??|time=??]`;
             break;
 
         case 'babyCare':
             prompt += `BABY CARE TRACKING
 Baby: ${state.data.name || 'Baby'}, Age: ${state.data.age || 'Newborn'}
+${state.data.congenitalConditions && state.data.congenitalConditions !== 'None' ? `⚠️ MEDICAL CONDITIONS: ${state.data.congenitalConditions} - factor into care!` : ''}
 Current: ${JSON.stringify(state.data)}
 
-UPDATE based on RP events:
+UPDATE based on RP:
 • age: Newborn → X days → X weeks → X months
-• hunger: Full/Satisfied/Hungry/Starving (after feeding: Full)
-• hygiene: Clean/Needs Change/Soiled (after change: Clean)
-• energy: Rested/Active/Tired/Exhausted (after sleep: Rested)
+• hunger: Full/Satisfied/Hungry/Starving
+• hygiene: Clean/Needs Change/Soiled
+• energy: Rested/Active/Tired/Exhausted
 • mood: Happy/Content/Fussy/Crying/Sleeping
-• health: Healthy or describe issues
-• milestone: Note any new achievements (first smile, etc.)
+• health: Current health status
+• medicalConditions: Ongoing conditions (from birth or developed)
+• nextCheckup: When is next pediatric visit
+• vaccinations: What's due
+• milestone: New achievements
 
-[TRACKER:babyCare|name=${state.data.name || '??'}|age=??|hunger=??|hygiene=??|energy=??|mood=??|health=??|milestone=??]`;
+[TRACKER:babyCare|name=${state.data.name || '??'}|age=??|hunger=??|hygiene=??|energy=??|mood=??|health=??|medicalConditions=??|nextCheckup=??|milestone=??]`;
             break;
 
         case 'miscarriage':
             prompt += `PREGNANCY LOSS
-Handle with sensitivity and realism.
 Week: ${state.data.week || '??'}
 
-Document:
+Document the loss. Handle with sensitivity.
 • cause: Natural/Medical Complications/Trauma/Unknown
-• physical: Physical recovery state
-• emotional: Emotional state (Devastated/Grieving/Numb/Coping)
-• support: Who is supporting character
+• physical: Physical symptoms and recovery
+• medicalCare: What medical care is needed/received
 
-[TRACKER:miscarriage|week=${state.data.week || '??'}|cause=??|physical=??|emotional=??|support=??]`;
+NOTE: Emotional state is controlled by the player, not auto-generated.
+${state.data.emotional ? `Player specified emotional state: ${state.data.emotional}` : 'Player will roleplay emotional response.'}
+
+[TRACKER:miscarriage|week=${state.data.week || '??'}|cause=??|physical=??|medicalCare=??${state.data.emotional ? `|emotional=${state.data.emotional}` : ''}]`;
             break;
     }
 
@@ -244,7 +275,34 @@ function processAIResponse(messageIndex) {
 
     // Handle tracker transitions
     if (parsed.trackerId !== state.active) {
-        handleTransition(parsed.trackerId);
+        handleTransition(parsed.trackerId, parsed.data);
+    }
+
+    // Handle gender reveal at birth
+    if (parsed.trackerId === 'birth' && parsed.data.gender) {
+        if (!state.actualGender) {
+            state.actualGender = parsed.data.gender;
+        }
+        // Check for ultrasound surprise
+        if (state.ultrasoundGender && state.ultrasoundGender !== state.actualGender) {
+            showToast(`🎉 Surprise! Baby is ${state.actualGender}, not ${state.ultrasoundGender}!`, 'info');
+        }
+    }
+
+    // Track ultrasound gender separately
+    if (parsed.trackerId === 'pregnancy' && parsed.data.ultrasoundGender) {
+        state.ultrasoundGender = parsed.data.ultrasoundGender;
+        // Determine actual gender if not set (with error chance)
+        if (!state.actualGender && parsed.data.ultrasoundGender !== 'Unknown') {
+            const errorChance = extension_settings[extensionName].ultrasoundErrorChance || 5;
+            if (Math.random() * 100 < errorChance) {
+                // Ultrasound is WRONG!
+                state.actualGender = parsed.data.ultrasoundGender === 'Boy' ? 'Girl' : 'Boy';
+                console.log('FLT: Ultrasound error! Actual gender:', state.actualGender);
+            } else {
+                state.actualGender = parsed.data.ultrasoundGender;
+            }
+        }
     }
 
     // Merge new data
@@ -268,7 +326,7 @@ function processAIResponse(messageIndex) {
     updateMenuState();
 }
 
-function handleTransition(newType) {
+function handleTransition(newType, newData) {
     const oldType = state.active;
     if (newType === oldType) return;
 
@@ -276,14 +334,19 @@ function handleTransition(newType) {
     removeOldTrackerDisplay();
     state.active = newType;
 
-    if (newType === 'birth' && oldType === 'pregnancy') {
-        showToast('🎉 Labor started!', 'success');
+    // Carry over relevant data
+    if (newType === 'babyCare' && oldType === 'birth') {
+        // Carry over baby info from birth
+        state.data.name = newData.name || state.data.name;
+        state.data.congenitalConditions = newData.congenitalConditions || state.data.congenitalConditions;
+        showToast('🎉 Baby born! Now tracking care.', 'success');
+    } else if (newType === 'birth' && oldType === 'pregnancy') {
+        showToast('Labor started!', 'info');
     } else if (newType === 'miscarriage' && oldType === 'pregnancy') {
+        state.data.week = state.data.week; // Carry over week
         showToast('Pregnancy loss...', 'warning');
-    } else if (newType === 'babyCare' && oldType === 'birth') {
-        showToast('Baby born! Now tracking care.', 'success');
     } else if (newType === 'pregnancy' && oldType === 'conception') {
-        showToast('Pregnancy started!', 'success');
+        showToast('Pregnancy confirmed!', 'success');
     }
 }
 
@@ -324,13 +387,10 @@ function renderTracker(messageIndex) {
     const mesText = messageEl.querySelector('.mes_text');
     if (!mesText) return;
 
-    // Remove [TRACKER:...] from display
     mesText.innerHTML = mesText.innerHTML.replace(/\[TRACKER:[^\]]+\]/gi, '');
 
-    // Remove old container
     messageEl.querySelector('.flt-tracker-container')?.remove();
 
-    // Add new
     const container = document.createElement('div');
     container.className = 'flt-tracker-container';
     container.innerHTML = generateTrackerHTML(display.trackerId, display.data);
@@ -359,7 +419,7 @@ function generateTrackerHTML(trackerId, data) {
         case 'birth': return genBirthHTML(data, baseStyle, isMobile);
         case 'babycare':
         case 'babyCare': return genBabyCareHTML(data, baseStyle, isMobile);
-        case 'miscarriage': return genMiscarriageHTML(data, baseStyle);
+        case 'miscarriage': return genMiscarriageHTML(data, baseStyle, isMobile);
         default: return '';
     }
 }
@@ -389,8 +449,13 @@ function genPregnancyHTML(d, baseStyle, isMobile) {
     const riskColor = riskColors[d.risks] || '#4caf50';
     const knowledgeIcon = (d.knowledge || '').toLowerCase().includes('hidden') ? 'eye-slash' : (d.knowledge || '').toLowerCase().includes('suspect') ? 'question' : 'eye';
 
+    // Gender display - show ultrasound result with possible uncertainty
+    const genderDisplay = d.ultrasoundGender && d.ultrasoundGender !== 'Unknown'
+        ? `${d.ultrasoundGender} <span style="font-size:0.8em;opacity:0.6;">(ultrasound)</span>`
+        : d.gender || 'Unknown';
+
     return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;margin:10px 0;">
-<div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#e91e63;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;">
+<div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#e91e63;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <i class="fa-solid fa-person-pregnant"></i> Pregnancy
     <span style="margin-left:auto;font-size:0.8em;opacity:0.7;font-weight:normal;text-transform:none;"><i class="fa-solid fa-${knowledgeIcon}"></i> ${d.knowledge || 'Hidden'}</span>
 </div>
@@ -398,9 +463,16 @@ function genPregnancyHTML(d, baseStyle, isMobile) {
     <div><span style="opacity:0.5;font-size:0.85em;">Week</span><br><strong style="color:var(--SmartThemeQuoteColor);font-size:1.1em;">${week}</strong></div>
     <div><span style="opacity:0.5;font-size:0.85em;">Size</span><br><strong style="color:var(--SmartThemeQuoteColor);">${size}</strong></div>
     <div><span style="opacity:0.5;font-size:0.85em;">Due</span><br><strong style="color:var(--SmartThemeQuoteColor);">${d.dueDate || '??'}</strong></div>
-    <div><span style="opacity:0.5;font-size:0.85em;">Gender</span><br><strong style="color:var(--SmartThemeQuoteColor);">${d.gender || '??'}</strong></div>
+    <div><span style="opacity:0.5;font-size:0.85em;">Gender</span><br><strong style="color:var(--SmartThemeQuoteColor);">${genderDisplay}</strong></div>
 </div>
 ${d.symptoms ? `<div style="padding:8px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-head-side-virus" style="opacity:0.5;"></i> ${d.symptoms}</div>` : ''}
+${d.nextVisit || d.testsNeeded ? `
+<div style="padding:8px;background:color-mix(in srgb,#2196f3 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;">
+    <i class="fa-solid fa-calendar-check" style="color:#2196f3;"></i>
+    ${d.nextVisit ? `<strong>Next visit:</strong> ${d.nextVisit}` : ''}
+    ${d.testsNeeded ? `<br><span style="opacity:0.8;"><i class="fa-solid fa-vial" style="opacity:0.5;"></i> ${d.testsNeeded}</span>` : ''}
+</div>
+` : ''}
 <div style="padding:8px 10px;background:color-mix(in srgb,${riskColor} 15%,transparent);border-left:3px solid ${riskColor};border-radius:0 6px 6px 0;">
     <span style="color:${riskColor};font-weight:bold;"><i class="fa-solid fa-heart-pulse"></i> ${d.risks || 'Stable'}</span>
     ${d.riskDetails ? `<span style="opacity:0.7;font-size:0.9em;"> — ${d.riskDetails}</span>` : ''}
@@ -410,6 +482,8 @@ ${d.symptoms ? `<div style="padding:8px;background:color-mix(in srgb,var(--Smart
 
 function genBirthHTML(d, baseStyle, isMobile) {
     const healthColor = (d.health || '').toLowerCase().includes('health') ? '#4caf50' : '#f4a261';
+    const hasConditions = d.congenitalConditions && d.congenitalConditions !== 'None';
+    const hasComplications = d.birthComplications && d.birthComplications !== 'None';
 
     return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;margin:10px 0;border-left:4px solid #2196f3;">
 <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#2196f3;text-transform:uppercase;letter-spacing:1px;">
@@ -421,9 +495,11 @@ function genBirthHTML(d, baseStyle, isMobile) {
     <div><i class="fa-solid fa-ruler-vertical" style="opacity:0.5;"></i> <strong>${d.height || '??'}</strong></div>
     <div><i class="fa-solid fa-clock" style="opacity:0.5;"></i> <strong>${d.time || '??'}</strong></div>
 </div>
+${d.apgar ? `<div style="font-size:0.9em;margin-bottom:8px;"><i class="fa-solid fa-chart-simple" style="opacity:0.5;"></i> APGAR: <strong style="color:${parseInt(d.apgar) >= 7 ? '#4caf50' : '#e76f51'};">${d.apgar}/10</strong></div>` : ''}
 ${d.hair || d.eyes ? `<div style="font-size:0.9em;margin-bottom:8px;"><i class="fa-solid fa-palette" style="opacity:0.5;"></i> Hair: ${d.hair || '??'} • Eyes: ${d.eyes || '??'}</div>` : ''}
 ${d.features ? `<div style="font-size:0.9em;margin-bottom:8px;"><i class="fa-solid fa-dna" style="opacity:0.5;"></i> ${d.features}</div>` : ''}
-${d.temperament ? `<div style="font-size:0.9em;margin-bottom:8px;"><i class="fa-solid fa-brain" style="opacity:0.5;"></i> ${d.temperament}</div>` : ''}
+${hasConditions ? `<div style="padding:8px;background:color-mix(in srgb,#e76f51 15%,transparent);border-radius:6px;margin-bottom:8px;font-size:0.9em;color:#e76f51;"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Condition:</strong> ${d.congenitalConditions}</div>` : ''}
+${hasComplications ? `<div style="padding:8px;background:color-mix(in srgb,#f4a261 15%,transparent);border-radius:6px;margin-bottom:8px;font-size:0.9em;"><i class="fa-solid fa-notes-medical"></i> <strong>Complications:</strong> ${d.birthComplications}</div>` : ''}
 <div style="padding:8px;background:color-mix(in srgb,${healthColor} 15%,transparent);border-radius:6px;text-align:center;">
     <i class="fa-solid fa-heart-pulse"></i> ${d.health || 'Checking...'}
 </div>
@@ -440,6 +516,7 @@ function genBabyCareHTML(d, baseStyle, isMobile) {
         };
         return colors[type]?.[val] || '#888';
     };
+    const hasConditions = d.medicalConditions && d.medicalConditions !== 'None' && d.medicalConditions !== 'Healthy';
 
     return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;margin:10px 0;">
 <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#4caf50;text-transform:uppercase;letter-spacing:1px;">
@@ -451,22 +528,23 @@ function genBabyCareHTML(d, baseStyle, isMobile) {
     <div><i class="fa-solid fa-bed" style="opacity:0.5;"></i> <span style="color:${getColor(d.energy, 'energy')};">${d.energy || '??'}</span></div>
     <div>${moodEmoji[d.mood] || '😶'} ${d.mood || '??'}</div>
 </div>
+${hasConditions ? `<div style="padding:8px;background:color-mix(in srgb,#e76f51 15%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;color:#e76f51;"><i class="fa-solid fa-heart-pulse"></i> ${d.medicalConditions}</div>` : ''}
+${d.nextCheckup ? `<div style="font-size:0.9em;margin-bottom:8px;"><i class="fa-solid fa-calendar-check" style="opacity:0.5;color:#2196f3;"></i> Next checkup: ${d.nextCheckup}</div>` : ''}
 ${d.milestone ? `<div style="padding:8px;background:color-mix(in srgb,#9b59b6 15%,transparent);border-radius:6px;font-size:0.9em;"><i class="fa-solid fa-star" style="color:#9b59b6;"></i> ${d.milestone}</div>` : ''}
-${d.health && d.health !== 'Healthy' ? `<div style="margin-top:8px;color:#e76f51;font-size:0.9em;"><i class="fa-solid fa-triangle-exclamation"></i> ${d.health}</div>` : ''}
 </div>`;
 }
 
-function genMiscarriageHTML(d, baseStyle) {
+function genMiscarriageHTML(d, baseStyle, isMobile) {
     return `<div style="${baseStyle}background:color-mix(in srgb,#6c757d 10%,transparent);border:1px solid #6c757d;border-radius:8px;padding:12px;margin:10px 0;">
 <div style="border-bottom:1px dashed #6c757d;margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#6c757d;text-transform:uppercase;letter-spacing:1px;">
     <i class="fa-solid fa-heart-crack"></i> Loss Report
 </div>
-<div style="line-height:1.8;">
+<div style="display:grid;${isMobile ? '' : 'grid-template-columns:1fr 1fr;'}gap:10px;">
     <div><span style="opacity:0.5;">Week:</span> <strong>${d.week || '??'}</strong></div>
     <div><span style="opacity:0.5;">Cause:</span> ${d.cause || '??'}</div>
-    <div><span style="opacity:0.5;">Physical:</span> ${d.physical || '??'}</div>
-    <div><span style="opacity:0.5;">Emotional:</span> <em>${d.emotional || '??'}</em></div>
-    ${d.support ? `<div><span style="opacity:0.5;">Support:</span> ${d.support}</div>` : ''}
+    <div style="${isMobile ? '' : 'grid-column:1/-1;'}"><span style="opacity:0.5;">Physical:</span> ${d.physical || '??'}</div>
+    ${d.medicalCare ? `<div style="${isMobile ? '' : 'grid-column:1/-1;'}"><span style="opacity:0.5;">Medical care:</span> ${d.medicalCare}</div>` : ''}
+    ${d.emotional ? `<div style="${isMobile ? '' : 'grid-column:1/-1;'}"><span style="opacity:0.5;">Emotional:</span> <em>${d.emotional}</em></div>` : ''}
 </div>
 </div>`;
 }
@@ -495,7 +573,7 @@ function loadState() {
 }
 
 function resetState() {
-    state = { active: null, data: {}, history: [], lastMessageId: null, dueDate: null };
+    state = { active: null, data: {}, history: [], lastMessageId: null, dueDate: null, actualGender: null, ultrasoundGender: null };
 }
 
 function saveSettings() {
@@ -548,6 +626,7 @@ function showToast(message, type = 'success') {
         color: var(--SmartThemeBodyColor);
         font-size: 14px;
         animation: flt-toastIn 0.3s ease;
+        max-width: 90vw;
     `;
 
     document.body.appendChild(toast);
@@ -555,7 +634,7 @@ function showToast(message, type = 'success') {
     setTimeout(() => {
         toast.style.animation = 'flt-toastOut 0.3s ease forwards';
         setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    }, 3500);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -600,7 +679,6 @@ function showTrackerForm(trackerId) {
     const savedData = state.active === trackerId ? state.data : {};
 
     let formContent = '';
-    let previewData = { ...savedData };
 
     switch (trackerId) {
         case 'conception':
@@ -633,14 +711,14 @@ function showTrackerForm(trackerId) {
         </div>
 
         <div style="background:color-mix(in srgb,var(--SmartThemeAccent) 10%,transparent);border-left:3px solid var(--SmartThemeAccent);padding:10px 12px;border-radius:0 8px 8px 0;margin-bottom:20px;font-size:13px;">
-            <i class="fa-solid fa-magic-wand-sparkles"></i> Fill what you want — AI will handle the rest automatically!
+            <i class="fa-solid fa-magic-wand-sparkles"></i> Fill what you want — AI handles the rest!
         </div>
 
         <form id="flt-form">${formContent}</form>
 
         <div style="background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border:1px dashed var(--SmartThemeBorderColor);border-radius:8px;padding:12px;margin:20px 0;">
             <div style="font-size:11px;text-transform:uppercase;color:var(--SmartThemeAccent);margin-bottom:10px;"><i class="fa-solid fa-eye"></i> Preview</div>
-            <div id="flt-preview">${generateTrackerHTML(trackerId, previewData)}</div>
+            <div id="flt-preview">${generateTrackerHTML(trackerId, savedData)}</div>
         </div>
 
         <div style="display:flex;gap:10px;${isMobile ? 'flex-direction:column;' : ''}">
@@ -653,22 +731,18 @@ function showTrackerForm(trackerId) {
         </div>
     `;
 
-    createPopup(content, "550px");
+    createPopup(content, "600px");
 
-    // Event handlers
     document.getElementById('flt-close-x').addEventListener('click', closePopup);
     document.getElementById('flt-cancel').addEventListener('click', closePopup);
 
-    // Live preview
     document.querySelectorAll('#flt-form input, #flt-form select, #flt-form textarea').forEach(el => {
         el.addEventListener('input', () => updatePreview(trackerId));
         el.addEventListener('change', () => updatePreview(trackerId));
     });
 
-    // Special handlers per tracker type
     setupTrackerHandlers(trackerId, savedData);
 
-    // Start button
     document.getElementById('flt-start').addEventListener('click', () => {
         const formData = getFormData();
         startTracker(trackerId, formData);
@@ -702,6 +776,8 @@ function buildConceptionForm(data, isMobile) {
 function buildPregnancyForm(data, isMobile) {
     const week = data.week || '';
     const gridStyle = isMobile ? 'grid-template-columns:1fr;' : 'grid-template-columns:1fr 1fr;';
+    const trimester = parseInt(week) <= 13 ? 'first' : parseInt(week) <= 26 ? 'second' : 'third';
+    const suggestedTests = week ? PREGNANCY_TESTS[trimester].slice(0, 3).join(', ') : '';
 
     return `
         <div style="display:grid;${gridStyle}gap:15px;">
@@ -722,20 +798,28 @@ function buildPregnancyForm(data, isMobile) {
                 </select>
             </div>
             <div>
-                <label style="font-size:12px;opacity:0.7;">Gender</label>
-                <select name="gender" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
-                    <option value="Unknown" ${data.gender === 'Unknown' ? 'selected' : ''}>Unknown</option>
-                    <option value="Boy" ${data.gender === 'Boy' ? 'selected' : ''}>Boy</option>
-                    <option value="Girl" ${data.gender === 'Girl' ? 'selected' : ''}>Girl</option>
-                    <option value="Twins" ${data.gender === 'Twins' ? 'selected' : ''}>Twins</option>
+                <label style="font-size:12px;opacity:0.7;">Ultrasound Gender <span style="font-size:10px;color:#f4a261;">(can be wrong!)</span></label>
+                <select name="ultrasoundGender" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+                    <option value="Unknown" ${!data.ultrasoundGender || data.ultrasoundGender === 'Unknown' ? 'selected' : ''}>Unknown / Not checked</option>
+                    <option value="Boy" ${data.ultrasoundGender === 'Boy' ? 'selected' : ''}>Boy (ultrasound)</option>
+                    <option value="Girl" ${data.ultrasoundGender === 'Girl' ? 'selected' : ''}>Girl (ultrasound)</option>
                 </select>
             </div>
-            <div style="grid-column:1/-1;">
+            <div>
                 <label style="font-size:12px;opacity:0.7;">Due Date</label>
                 <input type="date" name="dueDate" id="flt-dueDate" value="${data.dueDate || ''}" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
             </div>
+            <div>
+                <label style="font-size:12px;opacity:0.7;">Next Visit</label>
+                <input type="text" name="nextVisit" value="${data.nextVisit || ''}" placeholder="e.g., 2 weeks, March 15" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+            </div>
             <div style="grid-column:1/-1;">
-                <label style="font-size:12px;opacity:0.7;">Current Symptoms (optional)</label>
+                <label style="font-size:12px;opacity:0.7;">Tests/Procedures Needed</label>
+                <input type="text" name="testsNeeded" value="${data.testsNeeded || ''}" placeholder="${suggestedTests || 'e.g., Blood work, Ultrasound, Glucose test'}" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+                ${week ? `<div style="font-size:10px;opacity:0.5;margin-top:4px;">Suggested for trimester: ${PREGNANCY_TESTS[trimester].join(', ')}</div>` : ''}
+            </div>
+            <div style="grid-column:1/-1;">
+                <label style="font-size:12px;opacity:0.7;">Current Symptoms</label>
                 <textarea name="symptoms" rows="2" placeholder="AI will fill based on week if empty" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);resize:vertical;">${data.symptoms || ''}</textarea>
             </div>
             <div>
@@ -759,6 +843,10 @@ function buildPregnancyForm(data, isMobile) {
 function buildBirthForm(data, isMobile) {
     const gridStyle = isMobile ? 'grid-template-columns:1fr;' : 'grid-template-columns:1fr 1fr;';
 
+    const conditionsOptions = CONGENITAL_CONDITIONS.map(c =>
+        `<option value="${c}" ${data.congenitalConditions === c ? 'selected' : ''}>${c}</option>`
+    ).join('');
+
     return `
         <div style="display:grid;${gridStyle}gap:15px;">
             <div>
@@ -768,38 +856,47 @@ function buildBirthForm(data, isMobile) {
             <div>
                 <label style="font-size:12px;opacity:0.7;">Gender</label>
                 <select name="gender" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
-                    <option value="">AI decides</option>
+                    <option value="">AI decides / Reveal at birth</option>
                     <option value="Boy" ${data.gender === 'Boy' ? 'selected' : ''}>Boy</option>
                     <option value="Girl" ${data.gender === 'Girl' ? 'selected' : ''}>Girl</option>
-                    <option value="Twins (Boys)" ${data.gender === 'Twins (Boys)' ? 'selected' : ''}>Twins (Boys)</option>
-                    <option value="Twins (Girls)" ${data.gender === 'Twins (Girls)' ? 'selected' : ''}>Twins (Girls)</option>
-                    <option value="Twins (Mixed)" ${data.gender === 'Twins (Mixed)' ? 'selected' : ''}>Twins (Mixed)</option>
                 </select>
+                ${state.ultrasoundGender ? `<div style="font-size:10px;opacity:0.6;margin-top:4px;">Ultrasound said: ${state.ultrasoundGender}</div>` : ''}
             </div>
             <div>
                 <label style="font-size:12px;opacity:0.7;">Weight (kg)</label>
-                <input type="text" name="weight" value="${data.weight || ''}" placeholder="AI generates" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+                <input type="text" name="weight" value="${data.weight || ''}" placeholder="AI generates (2.5-4.5 typical)" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
             </div>
             <div>
                 <label style="font-size:12px;opacity:0.7;">Height (cm)</label>
-                <input type="text" name="height" value="${data.height || ''}" placeholder="AI generates" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
-            </div>
-            <div style="grid-column:1/-1;">
-                <label style="font-size:12px;opacity:0.7;">Physical Features (optional)</label>
-                <textarea name="features" rows="2" placeholder="AI describes based on genetics" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);resize:vertical;">${data.features || ''}</textarea>
+                <input type="text" name="height" value="${data.height || ''}" placeholder="AI generates (45-55 typical)" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
             </div>
             <div>
-                <label style="font-size:12px;opacity:0.7;">Health</label>
+                <label style="font-size:12px;opacity:0.7;">Health Status</label>
                 <select name="health" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
                     <option value="">AI determines</option>
                     <option value="Healthy" ${data.health === 'Healthy' ? 'selected' : ''}>Healthy</option>
                     <option value="Needs Observation" ${data.health === 'Needs Observation' ? 'selected' : ''}>Needs Observation</option>
+                    <option value="NICU Required" ${data.health === 'NICU Required' ? 'selected' : ''}>NICU Required</option>
                     <option value="Critical" ${data.health === 'Critical' ? 'selected' : ''}>Critical</option>
                 </select>
             </div>
             <div>
-                <label style="font-size:12px;opacity:0.7;">Time of Birth</label>
-                <input type="text" name="time" value="${data.time || ''}" placeholder="AI decides" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+                <label style="font-size:12px;opacity:0.7;">APGAR Score (1-10)</label>
+                <input type="number" name="apgar" value="${data.apgar || ''}" min="1" max="10" placeholder="AI scores (7+ is good)" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+            </div>
+            <div style="grid-column:1/-1;">
+                <label style="font-size:12px;opacity:0.7;">Congenital Conditions</label>
+                <select name="congenitalConditions" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+                    ${conditionsOptions}
+                </select>
+            </div>
+            <div style="grid-column:1/-1;">
+                <label style="font-size:12px;opacity:0.7;">Birth Complications</label>
+                <input type="text" name="birthComplications" value="${data.birthComplications || ''}" placeholder="None, or describe..." style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+            </div>
+            <div style="grid-column:1/-1;">
+                <label style="font-size:12px;opacity:0.7;">Physical Features</label>
+                <textarea name="features" rows="2" placeholder="AI describes based on genetics" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);resize:vertical;">${data.features || ''}</textarea>
             </div>
         </div>
     `;
@@ -816,7 +913,7 @@ function buildBabyCareForm(data, isMobile) {
             </div>
             <div>
                 <label style="font-size:12px;opacity:0.7;">Age</label>
-                <input type="text" name="age" value="${data.age || ''}" placeholder="Newborn, 2 weeks, 1 month..." style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+                <input type="text" name="age" value="${data.age || ''}" placeholder="Newborn, 2 weeks, 3 months..." style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
             </div>
             <div>
                 <label style="font-size:12px;opacity:0.7;">Hunger</label>
@@ -855,7 +952,15 @@ function buildBabyCareForm(data, isMobile) {
                 </select>
             </div>
             <div style="grid-column:1/-1;">
-                <label style="font-size:12px;opacity:0.7;">Health</label>
+                <label style="font-size:12px;opacity:0.7;">Medical Conditions (from birth or developed)</label>
+                <input type="text" name="medicalConditions" value="${data.medicalConditions || ''}" placeholder="None, or describe ongoing conditions" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+            </div>
+            <div>
+                <label style="font-size:12px;opacity:0.7;">Next Checkup</label>
+                <input type="text" name="nextCheckup" value="${data.nextCheckup || ''}" placeholder="e.g., 2 week visit" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+            </div>
+            <div>
+                <label style="font-size:12px;opacity:0.7;">Health Status</label>
                 <input type="text" name="health" value="${data.health || 'Healthy'}" placeholder="Healthy" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
             </div>
         </div>
@@ -864,13 +969,16 @@ function buildBabyCareForm(data, isMobile) {
 
 function buildMiscarriageForm(data, isMobile) {
     return `
+        <div style="background:color-mix(in srgb,#6c757d 10%,transparent);border:1px solid #6c757d;border-radius:8px;padding:12px;margin-bottom:15px;font-size:13px;">
+            <i class="fa-solid fa-info-circle"></i> Emotional response is <strong>your choice</strong> to roleplay. Fill it only if you want it tracked.
+        </div>
         <div style="display:grid;gap:15px;">
             <div>
                 <label style="font-size:12px;opacity:0.7;">Week of Loss</label>
                 <input type="number" name="week" value="${data.week || ''}" min="1" max="42" placeholder="Pregnancy week" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
             </div>
             <div>
-                <label style="font-size:12px;opacity:0.7;">Cause</label>
+                <label style="font-size:12px;opacity:0.7;">Cause (optional - AI can determine)</label>
                 <select name="cause" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
                     <option value="">AI determines</option>
                     <option value="Natural/Unknown" ${data.cause === 'Natural/Unknown' ? 'selected' : ''}>Natural/Unknown</option>
@@ -880,13 +988,15 @@ function buildMiscarriageForm(data, isMobile) {
                 </select>
             </div>
             <div>
-                <label style="font-size:12px;opacity:0.7;">Emotional State</label>
+                <label style="font-size:12px;opacity:0.7;">Emotional State (optional - your choice)</label>
                 <select name="emotional" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
-                    <option value="">AI determines</option>
+                    <option value="">Not tracked / I'll roleplay it</option>
                     <option value="Devastated" ${data.emotional === 'Devastated' ? 'selected' : ''}>Devastated</option>
                     <option value="Grieving" ${data.emotional === 'Grieving' ? 'selected' : ''}>Grieving</option>
                     <option value="Numb" ${data.emotional === 'Numb' ? 'selected' : ''}>Numb</option>
                     <option value="In Denial" ${data.emotional === 'In Denial' ? 'selected' : ''}>In Denial</option>
+                    <option value="Angry" ${data.emotional === 'Angry' ? 'selected' : ''}>Angry</option>
+                    <option value="Relieved" ${data.emotional === 'Relieved' ? 'selected' : ''}>Relieved (complicated feelings)</option>
                     <option value="Coping" ${data.emotional === 'Coping' ? 'selected' : ''}>Coping</option>
                 </select>
             </div>
@@ -938,7 +1048,6 @@ function setupTrackerHandlers(trackerId, data) {
                 document.getElementById('flt-size').value = BABY_SIZES[week];
             }
 
-            // Auto-calculate due date if week is set and no due date
             const dueDateEl = document.getElementById('flt-dueDate');
             if (week && !dueDateEl.value) {
                 const today = new Date();
@@ -976,9 +1085,21 @@ function startTracker(trackerId, formData) {
     state.history = [];
     state.lastMessageId = null;
 
-    // Handle conception → pregnancy transition
     if (trackerId === 'conception' && formData.result === 'Yes') {
         state.dueDate = formData.dueDate;
+    }
+
+    // Handle ultrasound gender setting
+    if (trackerId === 'pregnancy' && formData.ultrasoundGender && formData.ultrasoundGender !== 'Unknown') {
+        state.ultrasoundGender = formData.ultrasoundGender;
+        // Determine actual gender with error chance
+        const errorChance = extension_settings[extensionName].ultrasoundErrorChance || 5;
+        if (Math.random() * 100 < errorChance) {
+            state.actualGender = formData.ultrasoundGender === 'Boy' ? 'Girl' : 'Boy';
+            console.log('FLT: Ultrasound will be wrong! Actual:', state.actualGender);
+        } else {
+            state.actualGender = formData.ultrasoundGender;
+        }
     }
 
     saveState();
@@ -1009,6 +1130,17 @@ function showStatusPopup() {
         </div>
     `).join('') || '<div style="opacity:0.5;font-size:12px;">No updates yet</div>';
 
+    // Show gender info if pregnancy
+    let genderInfo = '';
+    if (state.active === 'pregnancy' && (state.ultrasoundGender || state.actualGender)) {
+        genderInfo = `
+        <div style="padding:10px;background:color-mix(in srgb,#9b59b6 10%,transparent);border-radius:8px;margin-bottom:15px;font-size:12px;">
+            <i class="fa-solid fa-venus-mars" style="color:#9b59b6;"></i>
+            ${state.ultrasoundGender ? `Ultrasound: <strong>${state.ultrasoundGender}</strong>` : ''}
+            ${state.actualGender && state.actualGender !== state.ultrasoundGender ? `<br><span style="color:#f4a261;">⚠️ Actual gender differs! Will be revealed at birth.</span>` : ''}
+        </div>`;
+    }
+
     const content = `
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
             <div style="width:50px;height:50px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,${tracker.color} 20%,transparent);border-radius:50%;color:${tracker.color};font-size:22px;">
@@ -1020,6 +1152,8 @@ function showStatusPopup() {
             </div>
             <button id="flt-close-x" style="background:none;border:none;color:var(--SmartThemeBodyColor);font-size:24px;cursor:pointer;opacity:0.6;">×</button>
         </div>
+
+        ${genderInfo}
 
         <div style="margin-bottom:20px;">
             ${generateTrackerHTML(state.active, state.data)}
@@ -1040,7 +1174,7 @@ function showStatusPopup() {
         </div>
     `;
 
-    createPopup(content, "480px");
+    createPopup(content, "500px");
 
     document.getElementById('flt-close-x').addEventListener('click', closePopup);
 
@@ -1074,11 +1208,11 @@ function showSettingsPopup() {
 
     const toggle = (id, label, desc, key) => `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border-radius:8px;margin-bottom:10px;">
-            <div>
+            <div style="flex:1;">
                 <div style="font-size:14px;">${label}</div>
                 <div style="font-size:11px;opacity:0.6;">${desc}</div>
             </div>
-            <div id="${id}" data-key="${key}" style="width:50px;height:26px;background:${s[key] ? 'var(--SmartThemeAccent)' : 'var(--SmartThemeBorderColor)'};border-radius:13px;cursor:pointer;position:relative;">
+            <div id="${id}" data-key="${key}" style="width:50px;height:26px;background:${s[key] ? 'var(--SmartThemeAccent)' : 'var(--SmartThemeBorderColor)'};border-radius:13px;cursor:pointer;position:relative;flex-shrink:0;margin-left:10px;">
                 <div style="position:absolute;top:3px;left:${s[key] ? '27px' : '3px'};width:20px;height:20px;background:white;border-radius:50%;transition:left 0.2s;"></div>
             </div>
         </div>
@@ -1098,6 +1232,12 @@ function showSettingsPopup() {
             <input type="number" id="flt-set-threshold" value="${s.conceptionThreshold || 20}" min="1" max="100" style="width:100%;padding:10px;margin-top:5px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
         </div>
 
+        <div style="margin-bottom:15px;">
+            <label style="font-size:13px;">Ultrasound Error Chance (%)</label>
+            <input type="number" id="flt-set-ultrasound-error" value="${s.ultrasoundErrorChance || 5}" min="0" max="50" style="width:100%;padding:10px;margin-top:5px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);">
+            <div style="font-size:10px;opacity:0.6;margin-top:4px;">Chance that ultrasound gender is wrong (revealed at birth)</div>
+        </div>
+
         <div style="padding:15px;background:color-mix(in srgb,#e76f51 10%,transparent);border:1px solid #e76f51;border-radius:8px;margin-bottom:20px;">
             <div style="font-size:13px;color:#e76f51;margin-bottom:10px;"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</div>
             <button id="flt-clear-all" style="background:#e76f51;color:white;padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-size:13px;">
@@ -1115,12 +1255,11 @@ function showSettingsPopup() {
         </div>
     `;
 
-    createPopup(content, "420px");
+    createPopup(content, "450px");
 
     document.getElementById('flt-close-x').addEventListener('click', closePopup);
     document.getElementById('flt-cancel-settings').addEventListener('click', closePopup);
 
-    // Toggle handlers
     document.querySelectorAll('[id^="flt-toggle-"]').forEach(el => {
         el.addEventListener('click', function() {
             const key = this.dataset.key;
@@ -1144,6 +1283,7 @@ function showSettingsPopup() {
 
     document.getElementById('flt-save-settings').addEventListener('click', () => {
         extension_settings[extensionName].conceptionThreshold = parseInt(document.getElementById('flt-set-threshold').value) || 20;
+        extension_settings[extensionName].ultrasoundErrorChance = parseInt(document.getElementById('flt-set-ultrasound-error').value) || 5;
         saveSettings();
         closePopup();
         showToast('Settings saved!', 'success');
@@ -1194,7 +1334,7 @@ function addMenu() {
 
     const menu = document.createElement("div");
     menu.id = "flt-menu";
-    menu.style.cssText = `display:none;position:absolute;bottom:calc(100% + 8px);left:0;background:var(--SmartThemeBlurTintColor);backdrop-filter:blur(10px);border:1px solid var(--SmartThemeBorderColor);border-radius:12px;padding:8px;z-index:1001;min-width:240px;box-shadow:0 4px 20px rgba(0,0,0,0.25);`;
+    menu.style.cssText = `display:none;position:absolute;bottom:calc(100% + 8px);left:0;background:var(--SmartThemeBlurTintColor);backdrop-filter:blur(10px);border:1px solid var(--SmartThemeBorderColor);border-radius:12px;padding:8px;z-index:1001;min-width:260px;box-shadow:0 4px 20px rgba(0,0,0,0.25);`;
 
     const trackersHTML = Object.values(TRACKERS).map(t => `
         <div class="flt-menu-item" data-action="tracker" data-tracker="${t.id}" style="padding:12px;cursor:pointer;border-radius:8px;display:flex;align-items:center;gap:12px;margin:2px 0;">
@@ -1319,7 +1459,6 @@ jQuery(() => {
         updateMenuState();
     }, 3000);
 
-    // CSS
     const style = document.createElement('style');
     style.textContent = `
         @keyframes flt-toastIn { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
@@ -1327,7 +1466,6 @@ jQuery(() => {
         @keyframes flt-bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
         .flt-tracker-container { animation: flt-fadeIn 0.3s ease; }
         @keyframes flt-fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         @media (max-width: 768px) {
             #flt-menu { min-width: calc(100vw - 40px) !important; left: 20px !important; right: 20px !important; }
         }
