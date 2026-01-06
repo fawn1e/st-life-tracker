@@ -642,7 +642,10 @@ function showToast(message, type = 'success') {
    ═══════════════════════════════════════════════════════════════ */
 
 function closePopup() {
-    document.getElementById("flt-popup")?.remove();
+    const popup = document.getElementById("flt-popup");
+    if (popup) {
+        popup.remove();
+    }
     document.body.style.overflow = '';
 }
 
@@ -652,18 +655,72 @@ function createPopup(content, width = "500px") {
 
     const popup = document.createElement("div");
     popup.id = "flt-popup";
-    popup.innerHTML = `
-        <div id="flt-popup-bg" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99998;"></div>
-        <div style="position:fixed;${isMobile ? 'top:10px;bottom:10px;left:10px;right:10px;' : 'top:50%;left:50%;transform:translate(-50%,-50%);'}width:${isMobile ? 'auto' : `min(${width}, 90vw)`};max-height:${isMobile ? 'none' : '85vh'};background:var(--SmartThemeBlurTintColor);border:1px solid var(--SmartThemeBorderColor);border-radius:12px;padding:20px;z-index:99999;overflow-y:auto;">
-            ${content}
-        </div>
+
+    // Background overlay
+    const bg = document.createElement("div");
+    bg.id = "flt-popup-bg";
+    bg.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 99998;
     `;
 
+    // Popup container
+    const container = document.createElement("div");
+    container.id = "flt-popup-container";
+
+    if (isMobile) {
+        container.style.cssText = `
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            background: var(--SmartThemeBlurTintColor);
+            border: 1px solid var(--SmartThemeBorderColor);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 99999;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        `;
+    } else {
+        container.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(${width}, 90vw);
+            max-height: 85vh;
+            background: var(--SmartThemeBlurTintColor);
+            border: 1px solid var(--SmartThemeBorderColor);
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 99999;
+            overflow-y: auto;
+        `;
+    }
+
+    container.innerHTML = content;
+
+    popup.appendChild(bg);
+    popup.appendChild(container);
     document.body.appendChild(popup);
     document.body.style.overflow = 'hidden';
 
-    document.getElementById("flt-popup-bg").addEventListener("click", closePopup);
-    const escHandler = (e) => { if (e.key === 'Escape') { closePopup(); document.removeEventListener('keydown', escHandler); } };
+    bg.addEventListener("click", closePopup);
+
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            closePopup();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
     document.addEventListener('keydown', escHandler);
 }
 
