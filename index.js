@@ -626,9 +626,14 @@ function getFormData() {
 }
 
 function updatePreview(trackerId) {
-    if (!trackerId) return;
+    const form = document.getElementById('flt-form');
+    const tracker = trackerId || form?.dataset?.tracker;
+    if (!tracker) return;
+
     const preview = document.getElementById('flt-preview');
-    if (preview) preview.innerHTML = generateTrackerHTML(trackerId, getFormData());
+    if (preview) {
+        preview.innerHTML = generateTrackerHTML(tracker, getFormData(), false);
+    }
 }
 
 function startTracker(trackerId, formData) {
