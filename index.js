@@ -258,8 +258,7 @@ function genPregnancyHTML(d, baseStyle, m) {
     const riskColors = { 'Stable': '#4caf50', 'Mild Concern': '#8bc34a', 'Moderate Risk': '#f4a261', 'High Risk': '#e76f51', 'Critical': '#dc3545' };
     const riskColor = riskColors[d.risks] || '#4caf50';
     return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;">
-        <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#e91e63;text-transform:uppercase;letter-spacing:1px;"><i class="fa-solid fa-person-pregnant"></i> Pregnancy ${d.knowledge && d.knowledge !== 'Hidden' ? `<span style="font-size:0.7em;opacity:0.7;">• ${d.knowledge}</span>` : ''}</div>
-        <div style="display:grid;grid-template-columns:${m ? '1fr 1fr' : 'repeat(4, 1fr)'};gap:8px;margin-bottom:10px;">
+            <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#e91e63;text-transform:uppercase;letter-spacing:1px;"><i class="fa-solid fa-person-pregnant"></i> Pregnancy <span style="font-size:0.7em;opacity:0.7;">• ${d.knowledge || 'Hidden'}</span></div>        <div style="display:grid;grid-template-columns:${m ? '1fr 1fr' : 'repeat(4, 1fr)'};gap:8px;margin-bottom:10px;">
             <div><span style="opacity:0.5;font-size:0.85em;">Week</span><br><strong>${week}</strong></div>
             <div><span style="opacity:0.5;font-size:0.85em;">Size</span><br><strong>${size}</strong></div>
             <div><span style="opacity:0.5;font-size:0.85em;">Due</span><br><strong>${d.dueDate || '??'}</strong></div>
