@@ -1,15 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════
-   LIFE TRACKER - COMPACT POPUP
+   LIFE TRACKER - COMPACT
    ═══════════════════════════════════════════════════════════════ */
 
-/* ===== WRAPPER ===== */
 #lt-wrapper {
     position: relative;
     display: inline-flex;
     align-items: center;
 }
 
-/* ===== TRIGGER BUTTON ===== */
 #life-tracker-button {
     cursor: pointer;
     padding: 3px;
@@ -17,23 +15,20 @@
     transition: opacity 0.2s, color 0.2s;
 }
 
-#life-tracker-button:hover {
-    opacity: 1;
-    color: var(--SmartThemeQuoteColor);
-}
-
+#life-tracker-button:hover,
 #life-tracker-button.active {
     opacity: 1;
     color: var(--SmartThemeQuoteColor);
 }
 
-/* ===== POPUP ===== */
+/* ===== POPUP - FIXED WIDTH ===== */
 #lt-popup {
     display: none;
     position: absolute;
     bottom: calc(100% + 8px);
     left: 0;
-    min-width: 180px;
+    width: 260px;
+    max-width: 260px;
     background: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 8px;
@@ -58,18 +53,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 10px;
+    padding: 6px 10px;
     border-bottom: 1px solid var(--SmartThemeBorderColor);
     background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, transparent);
 }
 
 .lt-header h3 {
     margin: 0;
-    font-size: 0.8em;
+    font-size: 0.75em;
     color: var(--SmartThemeBodyColor);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-weight: 600;
 }
 
@@ -77,10 +72,9 @@
     background: transparent;
     border: none;
     color: var(--SmartThemeBodyColor);
-    font-size: 0.9em;
+    font-size: 0.85em;
     cursor: pointer;
     opacity: 0.5;
-    transition: opacity 0.2s;
     padding: 2px;
 }
 
@@ -90,23 +84,23 @@
 
 /* ===== MENU ===== */
 .lt-menu {
-    padding: 4px;
+    padding: 3px;
 }
 
 .lt-menu-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     width: 100%;
-    padding: 7px 10px;
+    padding: 6px 8px;
     background: transparent;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
     color: var(--SmartThemeBodyColor);
-    font-size: 0.8em;
+    font-size: 0.75em;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.12s;
+    transition: background 0.1s;
     text-align: left;
 }
 
@@ -115,18 +109,18 @@
 }
 
 .lt-menu-item i {
-    width: 16px;
+    width: 14px;
     text-align: center;
     opacity: 0.7;
-    font-size: 0.9em;
+    font-size: 0.85em;
 }
 
 /* ===== SETTINGS ===== */
 .lt-settings {
     display: none;
-    padding: 10px;
+    padding: 8px;
     overflow-y: auto;
-    max-height: 45vh;
+    max-height: 50vh;
 }
 
 .lt-settings.open {
@@ -137,18 +131,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
     border-bottom: 1px solid var(--SmartThemeBorderColor);
 }
 
 .lt-settings-title {
     font-weight: 600;
-    font-size: 0.8em;
+    font-size: 0.7em;
     color: var(--SmartThemeBodyColor);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .lt-back-btn {
@@ -156,13 +150,10 @@
     border: none;
     color: var(--SmartThemeBodyColor);
     cursor: pointer;
-    padding: 2px 6px;
+    padding: 2px 4px;
     opacity: 0.6;
-    font-size: 0.75em;
+    font-size: 0.65em;
     font-family: inherit;
-    display: flex;
-    align-items: center;
-    gap: 3px;
 }
 
 .lt-back-btn:hover {
@@ -171,13 +162,13 @@
 
 /* ===== FORM ===== */
 .lt-field {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .lt-field label {
     display: block;
-    font-size: 0.7em;
-    margin-bottom: 3px;
+    font-size: 0.65em;
+    margin-bottom: 2px;
     opacity: 0.6;
     color: var(--SmartThemeBodyColor);
 }
@@ -185,12 +176,12 @@
 .lt-field input,
 .lt-field select {
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 6px;
     background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 4px;
+    border-radius: 3px;
     color: var(--SmartThemeBodyColor);
-    font-size: 0.8em;
+    font-size: 0.7em;
     font-family: inherit;
     box-sizing: border-box;
 }
@@ -209,32 +200,31 @@
 .lt-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    gap: 5px;
 }
 
 /* ===== BUTTONS ===== */
 .lt-actions {
     display: flex;
-    gap: 6px;
-    margin-top: 10px;
-    padding-top: 8px;
+    gap: 5px;
+    margin-top: 8px;
+    padding-top: 6px;
     border-top: 1px solid var(--SmartThemeBorderColor);
 }
 
 .lt-btn {
     flex: 1;
-    padding: 7px 10px;
+    padding: 5px 8px;
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 4px;
-    font-size: 0.75em;
+    border-radius: 3px;
+    font-size: 0.7em;
     cursor: pointer;
-    transition: all 0.12s;
+    transition: all 0.1s;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
+    gap: 4px;
     font-family: inherit;
-    font-weight: 500;
 }
 
 .lt-btn-primary {
@@ -253,7 +243,7 @@
 }
 
 .lt-btn-secondary:hover {
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 8%, transparent);
 }
 
 /* ===== SCROLLBAR ===== */
@@ -261,44 +251,33 @@
     width: 3px;
 }
 
-.lt-settings::-webkit-scrollbar-track {
-    background: transparent;
-}
-
 .lt-settings::-webkit-scrollbar-thumb {
     background: var(--SmartThemeBorderColor);
     border-radius: 2px;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   MOBILE
-   ═══════════════════════════════════════════════════════════════ */
-
+/* ===== MOBILE ===== */
 @media (max-width: 600px) {
     #lt-popup {
         position: fixed;
         bottom: 50px;
         left: 8px;
         right: 8px;
-        min-width: unset;
+        width: auto;
+        max-width: none;
     }
 
     .lt-row {
         grid-template-columns: 1fr;
-        gap: 6px;
     }
 
     .lt-field input,
     .lt-field select {
-        padding: 9px 10px;
+        padding: 8px;
         font-size: 16px;
     }
 
-    .lt-settings {
-        max-height: 50vh;
-    }
-
     .lt-btn {
-        padding: 10px 12px;
+        padding: 8px 10px;
     }
 }
