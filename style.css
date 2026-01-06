@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   LIFE TRACKER - POPUP OVER BUTTON
+   LIFE TRACKER - COMPACT POPUP
    ═══════════════════════════════════════════════════════════════ */
 
 /* ===== WRAPPER ===== */
@@ -27,31 +27,29 @@
     color: var(--SmartThemeQuoteColor);
 }
 
-/* ===== POPUP PANEL ===== */
+/* ===== POPUP ===== */
 #lt-popup {
     display: none;
     position: absolute;
-    bottom: calc(100% + 10px);
+    bottom: calc(100% + 8px);
     left: 0;
-    width: 340px;
-    max-height: 65vh;
+    min-width: 180px;
     background: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 10px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(12px);
     z-index: 10000;
     overflow: hidden;
-    flex-direction: column;
 }
 
 #lt-popup.open {
-    display: flex;
-    animation: ltPop 0.15s ease-out;
+    display: block;
+    animation: ltPop 0.12s ease-out;
 }
 
 @keyframes ltPop {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -60,18 +58,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 14px;
+    padding: 8px 10px;
     border-bottom: 1px solid var(--SmartThemeBorderColor);
     background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, transparent);
 }
 
 .lt-header h3 {
     margin: 0;
-    font-size: 0.95em;
+    font-size: 0.8em;
     color: var(--SmartThemeBodyColor);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-weight: 600;
 }
 
@@ -79,11 +77,11 @@
     background: transparent;
     border: none;
     color: var(--SmartThemeBodyColor);
-    font-size: 1em;
+    font-size: 0.9em;
     cursor: pointer;
-    opacity: 0.6;
+    opacity: 0.5;
     transition: opacity 0.2s;
-    padding: 4px;
+    padding: 2px;
 }
 
 .lt-close-btn:hover {
@@ -92,23 +90,23 @@
 
 /* ===== MENU ===== */
 .lt-menu {
-    padding: 6px;
+    padding: 4px;
 }
 
 .lt-menu-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    padding: 10px 12px;
+    padding: 7px 10px;
     background: transparent;
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     color: var(--SmartThemeBodyColor);
-    font-size: 0.9em;
+    font-size: 0.8em;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.12s;
     text-align: left;
 }
 
@@ -117,17 +115,18 @@
 }
 
 .lt-menu-item i {
-    width: 20px;
+    width: 16px;
     text-align: center;
-    opacity: 0.8;
+    opacity: 0.7;
+    font-size: 0.9em;
 }
 
-/* ===== SETTINGS PANEL ===== */
+/* ===== SETTINGS ===== */
 .lt-settings {
     display: none;
-    padding: 12px;
+    padding: 10px;
     overflow-y: auto;
-    max-height: 50vh;
+    max-height: 45vh;
 }
 
 .lt-settings.open {
@@ -138,18 +137,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
     border-bottom: 1px solid var(--SmartThemeBorderColor);
 }
 
 .lt-settings-title {
     font-weight: 600;
-    font-size: 0.9em;
+    font-size: 0.8em;
     color: var(--SmartThemeBodyColor);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .lt-back-btn {
@@ -157,13 +156,13 @@
     border: none;
     color: var(--SmartThemeBodyColor);
     cursor: pointer;
-    padding: 4px 8px;
-    opacity: 0.7;
-    font-size: 0.8em;
+    padding: 2px 6px;
+    opacity: 0.6;
+    font-size: 0.75em;
     font-family: inherit;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
 }
 
 .lt-back-btn:hover {
@@ -172,26 +171,26 @@
 
 /* ===== FORM ===== */
 .lt-field {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .lt-field label {
     display: block;
-    font-size: 0.75em;
-    margin-bottom: 4px;
-    opacity: 0.7;
+    font-size: 0.7em;
+    margin-bottom: 3px;
+    opacity: 0.6;
     color: var(--SmartThemeBodyColor);
 }
 
 .lt-field input,
 .lt-field select {
     width: 100%;
-    padding: 8px 10px;
+    padding: 6px 8px;
     background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 5px;
+    border-radius: 4px;
     color: var(--SmartThemeBodyColor);
-    font-size: 0.85em;
+    font-size: 0.8em;
     font-family: inherit;
     box-sizing: border-box;
 }
@@ -210,30 +209,30 @@
 .lt-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
 }
 
 /* ===== BUTTONS ===== */
 .lt-actions {
     display: flex;
-    gap: 8px;
-    margin-top: 12px;
-    padding-top: 10px;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
     border-top: 1px solid var(--SmartThemeBorderColor);
 }
 
 .lt-btn {
     flex: 1;
-    padding: 9px 12px;
+    padding: 7px 10px;
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 5px;
-    font-size: 0.8em;
+    border-radius: 4px;
+    font-size: 0.75em;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.12s;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 5px;
     font-family: inherit;
     font-weight: 500;
 }
@@ -259,7 +258,7 @@
 
 /* ===== SCROLLBAR ===== */
 .lt-settings::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
 }
 
 .lt-settings::-webkit-scrollbar-track {
@@ -278,11 +277,10 @@
 @media (max-width: 600px) {
     #lt-popup {
         position: fixed;
-        bottom: 55px;
+        bottom: 50px;
         left: 8px;
         right: 8px;
-        width: auto;
-        max-height: 70vh;
+        min-width: unset;
     }
 
     .lt-row {
@@ -290,30 +288,17 @@
         gap: 6px;
     }
 
-    .lt-menu-item {
-        padding: 12px 14px;
-    }
-
     .lt-field input,
     .lt-field select {
-        padding: 10px 12px;
+        padding: 9px 10px;
         font-size: 16px;
     }
 
     .lt-settings {
-        padding: 10px;
-        max-height: 55vh;
+        max-height: 50vh;
     }
 
     .lt-btn {
-        padding: 11px 14px;
-    }
-}
-
-@media (max-width: 400px) {
-    #lt-popup {
-        left: 5px;
-        right: 5px;
-        bottom: 50px;
+        padding: 10px 12px;
     }
 }
