@@ -61,6 +61,8 @@ let state = {
     ultrasoundGender: null
 };
 
+let currentFormTracker = null;
+
 /* ═══════════════════════════════════════════════════════════════
    UTILITY FUNCTIONS
    ═══════════════════════════════════════════════════════════════ */
@@ -241,6 +243,7 @@ function closePopup() {
     document.body.style.overflow = '';
     document.body.style.position = '';
     document.body.style.width = '';
+    currentFormTracker = null; // <-- ОЧИЩАЕМ
 }
 
 function createPopup(content, width = "500px") {
@@ -596,6 +599,8 @@ function showTrackerForm(trackerId) {
     const tracker = TRACKERS[trackerId];
     if (!tracker) return;
 
+    currentFormTracker = trackerId; // <-- ЗАПОМИНАЕМ
+
     const m = window.innerWidth <= 768;
     const savedData = state.active === trackerId ? state.data : {};
 
@@ -621,7 +626,7 @@ function showTrackerForm(trackerId) {
             <i class="fa-solid fa-magic-wand-sparkles"></i> Fill what you want — AI handles the rest!
         </div>
 
-        <form id="flt-form">${formContent}</form>
+        <form id="flt-form" data-tracker="${trackerId}">${formContent}</form>
 
         <div style="background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border:1px dashed var(--SmartThemeBorderColor);border-radius:8px;padding:12px;margin:${m ? '20px' : '16px'} 0;">
             <div style="font-size:11px;text-transform:uppercase;color:var(--SmartThemeAccent);margin-bottom:10px;"><i class="fa-solid fa-eye"></i> Preview</div>
@@ -637,8 +642,8 @@ function showTrackerForm(trackerId) {
     createPopup(content, "600px");
 
     document.querySelectorAll('#flt-form input, #flt-form select, #flt-form textarea').forEach(el => {
-        el.addEventListener('input', () => updatePreview(trackerId));
-        el.addEventListener('change', () => updatePreview(trackerId));
+        el.addEventListener('input', () => updatePreview(currentFormTracker));
+        el.addEventListener('change', () => updatePreview(currentFormTracker));
     });
 
     setupTrackerHandlers(trackerId, savedData);
@@ -648,7 +653,9 @@ function showTrackerForm(trackerId) {
         startTracker(trackerId, formData);
     });
     document.getElementById('flt-cancel').addEventListener('click', closePopup);
-    document.getElementById("flt-menu").style.display = "none";
+
+    const menu = document.getElementById("flt-menu");
+    if (menu) menu.style.display = "none";
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -843,7 +850,8 @@ function setupDateModeHandlers() {
     document.querySelectorAll('.flt-date-mode').forEach(btn => {
         btn.addEventListener('click', function() {
             const mode = this.dataset.datemode;
-            document.getElementById('flt-date-mode').value = mode;
+            const dateModeInput = document.getElementById('flt-date-mode');
+            if (dateModeInput) dateModeInput.value = mode;
 
             // Update button styles
             document.querySelectorAll('.flt-date-mode').forEach(b => {
@@ -859,7 +867,10 @@ function setupDateModeHandlers() {
                 if (el) el.style.display = m === mode ? 'block' : 'none';
             });
 
-            updatePreview(document.getElementById('flt-form').closest('#flt-popup-content').querySelector('[data-tracker]')?.dataset.tracker || state.active || 'conception');
+            // Use the stored tracker ID - НЕ FALLBACK НА CONCEPTION!
+            if (currentFormTracker) {
+                updatePreview(currentFormTracker);
+            }
         });
     });
 }
