@@ -784,13 +784,41 @@ jQuery(async () => {
         extension_settings[extensionName] = { chatData: {} };
     }
 
-    // Create wrapper for button + popup
-    const $wrapper = $('<div id="lt-wrapper" style="position:relative;display:inline-block;"></div>');
-    $wrapper.append('<div id="lt-trigger" title="Life Tracker"><i class="fa-solid fa-heart-pulse"></i></div>');
-    $wrapper.append(generatePopupHTML());
+    // Add button to left panel (same place as before)
+    const buttonHtml = `<div id="lt-trigger" class="fa-solid fa-heart-pulse" title="Life Tracker"></div>`;
+    $('#leftSendForm').prepend(buttonHtml);
 
-    // Insert into left form area
-    $('#leftSendForm').prepend($wrapper);
+    // Add popup to body (positioned via CSS)
+    $('body').append(generatePopupHTML());
+
+    // Bind events
+    $('#lt-trigger').on('click', (e) => {
+        e.stopPropagation();
+        togglePopup();
+    });
+
+    $(document).on('click', '.lt-menu-item', function() {
+        const type = $(this).data('type');
+        showSettings(type);
+    });
+
+    // Close on outside click
+    $(document).on('click', (e) => {
+        if (!$(e.target).closest('#lt-popup').length && !$(e.target).closest('#lt-trigger').length) {
+            closePopup();
+        }
+    });
+
+    // Close on Escape
+    $(document).on('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closePopup();
+        }
+    });
+
+    console.log('[Life Tracker] Loaded');
+});
+;
 
     // Bind events
     $('#lt-trigger').on('click', (e) => {
