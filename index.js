@@ -696,9 +696,9 @@ function buildBabyCareForm(data) {
         `)}
 
         <!-- Delete button -->
-        ${babies.length > 1 ? `
-            <div style="margin-top:20px;padding-top:15px;border-top:1px dashed #e76f51;">
-                <button type="button" id="flt-remove-baby" data-baby-id="${currentId}" style="
+        ${babies.length > 0 ? `
+    <div style="margin-top:20px;padding-top:15px;border-top:1px dashed #e76f51;">
+        <button type="button" id="flt-remove-baby" data-baby-id="${currentId}" style="
                     background:transparent;
                     color:#e76f51;
                     border:1px solid #e76f51;
@@ -859,18 +859,26 @@ function setupBabyCareHandlers(data) {
     // Remove baby button
     document.getElementById('flt-remove-baby')?.addEventListener('click', function() {
         const babyId = parseInt(this.dataset.babyId);
-        const baby = getBabies().find(b => b.id === babyId);
-        if (confirm(`Remove ${baby?.name || 'this baby'}?`)) {
-            removeBaby(babyId);
-            closePopup();
-            showTrackerForm('babyCare');
-        }
-    });
+        const babies = getBabies();
+        const baby = babies.find(b => b.id === babyId);
 
-    // Update preview on input
-    document.querySelectorAll('#flt-form input, #flt-form select, #flt-form textarea').forEach(el => {
-        el.addEventListener('input', () => updatePreview('babyCare'));
-        el.addEventListener('change', () => updatePreview('babyCare'));
+        if (babies.length === 1) {
+            // Единственный бейби — спрашиваем и очищаем всё
+            if (confirm(`Remove ${baby?.name || 'this baby'}? This will clear the Baby Care tracker.`)) {
+                state.data.babies = [];
+                state.data.currentBabyId = null;
+                saveState();
+                closePopup();
+                showTrackerForm('babyCare');
+            }
+        } else {
+            // Несколько бейби — просто удаляем одного
+            if (confirm(`Remove ${baby?.name || 'this baby'}?`)) {
+                removeBaby(babyId);
+                closePopup();
+                showTrackerForm('babyCare');
+            }
+        }
     });
 }
 
@@ -880,40 +888,51 @@ function getFormData() {
     new FormData(form).forEach((value, key) => { if (value && value.trim()) data[key] = value.trim(); });
 
     // Handle babyCare multi-baby
-    if (currentFormTracker === 'babyCare' && state.data.babies) {
-        const currentId = parseInt(data.currentBabyId) || state.data.currentBabyId;
+    if (currentFormTracker === 'babyCare') {
+        const currentId = parseInt(data.currentBabyId) || state.data.currentBabyId || 1;
+
+        // Собираем данные текущего бейби из формы
         const babyData = {
-            name: data.babyName,
-            age: data.babyAge,
-            hunger: data.babyHunger,
-            hygiene: data.babyHygiene,
-            energy: data.babyEnergy,
-            mood: data.babyMood,
-            health: data.babyHealth,
-            nextCheckup: data.babyNextCheckup,
-            visitType: data.babyVisitType,
-            vaccinations: data.babyVaccinations,
-            testsNeeded: data.babyTests,
-            medications: data.babyMedications,
-            doctorAdvice: data.babyDoctorAdvice,
-            milestone: data.babyMilestone,
-            developmentNotes: data.babyDevelopmentNotes,
-            feeding: data.babyFeeding,
-            sleepPattern: data.babySleepPattern
+            id: currentId,
+            name: data.babyName || '',
+            age: data.babyAge || '',
+            hunger: data.babyHunger || 'Satisfied',
+            hygiene: data.babyHygiene || 'Clean',
+            energy: data.babyEnergy || 'Rested',
+            mood: data.babyMood || 'Content',
+            health: data.babyHealth || 'Healthy',
+            nextCheckup: data.babyNextCheckup || '',
+            visitType: data.babyVisitType || '',
+            vaccinations: data.babyVaccinations || '',
+            testsNeeded: data.babyTests || '',
+            medications: data.babyMedications || '',
+            doctorAdvice: data.babyDoctorAdvice || '',
+            milestone: data.babyMilestone || '',
+            developmentNotes: data.babyDevelopmentNotes || '',
+            feeding: data.babyFeeding || '',
+            sleepPattern: data.babySleepPattern || ''
         };
 
-        // Update existing baby
-        const babies = [...(state.data.babies || [])];
+        // Копируем существующих бейби или создаём новый массив
+        let babies = [...(state.data.babies || [])];
+
+        // Находим и обновляем текущего бейби
         const idx = babies.findIndex(b => b.id === currentId);
         if (idx >= 0) {
             babies[idx] = { ...babies[idx], ...babyData };
+        } else if (babyData.name) {
+            // Если бейби нет в массиве но есть имя — добавляем
+            babies.push(babyData);
         }
 
         data.babies = babies;
         data.currentBabyId = currentId;
     }
 
-    if (data.dateMode === 'system' && data.week) data.dueDate = formatDate(calculateDueDate(new Date(), parseInt(data.week)));
+    if (data.dateMode === 'system' && data.week) {
+        data.dueDate = formatDate(calculateDueDate(new Date(), parseInt(data.week)));
+    }
+
     return data;
 }
 
