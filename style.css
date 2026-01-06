@@ -32,8 +32,27 @@
 /* Mobile menu fix */
 @media (max-width: 768px) {
     #flt-menu {
-        min-width: calc(100vw - 40px) !important;
+        /* Фиксируем ширину и отступы по бокам */
+        width: auto !important;
+        min-width: unset !important;
         left: 20px !important;
         right: 20px !important;
+        
+        /* Исправляем высоту, чтобы окно было большим */
+        top: 50% !important;
+        max-height: 85vh !important; /* Занимает до 85% высоты экрана */
+        overflow-y: auto !important; /* Включает прокрутку, если контента много */
+        
+        /* Центрирование только по вертикали (так как по горизонтали мы растянули через left/right) */
+        transform: translateY(-50%) !important; 
+        
+        /* Дополнительно: убедимся, что контент внутри не ломается */
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    /* Если внутри есть контейнер контента, даем ему скроллиться */
+    #flt-menu > div {
+        overflow-y: auto !important;
     }
 }
