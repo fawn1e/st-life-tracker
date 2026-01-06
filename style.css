@@ -1,64 +1,39 @@
 /* ═══════════════════════════════════════════════════════════════
    FAWN'S LIFE TRACKER - STYLES
+   Minimal CSS - most styles are inline in JS
    ═══════════════════════════════════════════════════════════════ */
 
-/* Tracker HTML Styles - эти стили для вставленного HTML */
-.flt-tracker-block {
-    font-family: 'Courier New', monospace;
-    font-size: 0.85em;
-    line-height: 1.5;
-    color: var(--SmartThemeBodyColor);
+/* Animations - these are used by JS */
+@keyframes flt-toastIn {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
 }
 
-/* Toast notifications */
-.flt-toast {
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    background: var(--SmartThemeBlurTintColor, #1a1a2e);
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 8px;
-    padding: 12px 20px;
-    z-index: 10001;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    animation: flt-slideIn 0.3s ease;
-    color: var(--SmartThemeBodyColor);
-    font-size: 13px;
+@keyframes flt-toastOut {
+    from { opacity: 1; transform: translate(-50%, 0); }
+    to { opacity: 0; transform: translate(-50%, -20px); }
 }
 
-.flt-toast.success {
-    border-left: 3px solid #2a9d8f;
+@keyframes flt-fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.flt-toast.error {
-    border-left: 3px solid #e76f51;
+@keyframes flt-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
 }
 
-.flt-toast.hiding {
-    animation: flt-slideOut 0.3s ease forwards;
+/* Tracker container animation */
+.flt-tracker-container {
+    animation: flt-fadeIn 0.3s ease;
 }
 
-@keyframes flt-slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(100px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes flt-slideOut {
-    from {
-        opacity: 1;
-        transform: translateX(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateX(100px);
+/* Mobile menu fix */
+@media (max-width: 768px) {
+    #flt-menu {
+        min-width: calc(100vw - 40px) !important;
+        left: 20px !important;
+        right: 20px !important;
     }
 }
