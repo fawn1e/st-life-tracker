@@ -1,269 +1,299 @@
-/* ===== MAIN PANEL ===== */
-#life-tracker-panel {
-    display: none;
-    position: fixed;
-    bottom: 60px;
-    right: 20px;
-    width: 420px;
-    max-height: 75vh;
-    background: var(--SmartThemeBlurTintColor);
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    z-index: 9999;
-    overflow: hidden;
-    backdrop-filter: blur(10px);
-}
+/* ═══════════════════════════════════════════════════════════════
+   LIFE TRACKER - MINIMAL ST-NATIVE STYLES
+   ═══════════════════════════════════════════════════════════════ */
 
-#life-tracker-panel.open {
-    display: flex;
-    flex-direction: column;
-}
-
-/* ===== HEADER ===== */
-.lt-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--SmartThemeBodyColor);
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
-    border-bottom: 1px solid var(--SmartThemeBorderColor);
-}
-
-.lt-header h3 {
-    margin: 0;
+/* ===== TRIGGER BUTTON ===== */
+#lt-trigger {
+    cursor: pointer;
+    padding: 3px;
+    opacity: 0.7;
+    transition: opacity 0.2s, color 0.2s;
     font-size: 1.1em;
-    color: var(--SmartThemeBodyColor);
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
-.lt-close-btn {
-    background: transparent;
-    border: none;
-    color: var(--SmartThemeBodyColor);
-    font-size: 1.3em;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-.lt-close-btn:hover {
+#lt-trigger:hover {
     opacity: 1;
-}
-
-/* ===== TABS ===== */
-.lt-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--SmartThemeBorderColor);
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.lt-tab {
-    flex: 1;
-    padding: 10px 8px;
-    background: transparent;
-    border: none;
-    color: var(--SmartThemeBodyColor);
-    opacity: 0.6;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.8em;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.lt-tab i {
-    font-size: 1.2em;
-}
-
-.lt-tab:hover {
-    opacity: 0.9;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.lt-tab.active {
-    opacity: 1;
-    background: rgba(139, 92, 246, 0.2);
-    border-bottom: 2px solid var(--SmartThemeAccent);
-}
-
-/* ===== CONTENT AREA ===== */
-.lt-content {
-    padding: 16px;
-    overflow-y: auto;
-    max-height: 50vh;
-}
-
-.lt-section {
-    display: none;
-}
-
-.lt-section.active {
-    display: block;
-}
-
-/* ===== FORM STYLES ===== */
-.lt-form-group {
-    margin-bottom: 14px;
-}
-
-.lt-form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 0.85em;
-    color: var(--SmartThemeBodyColor);
-    opacity: 0.8;
-}
-
-.lt-form-group input,
-.lt-form-group select {
-    width: 100%;
-    padding: 10px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 6px;
-    color: var(--SmartThemeBodyColor);
-    font-size: 0.9em;
-}
-
-.lt-form-group input:focus,
-.lt-form-group select:focus {
-    outline: none;
-    border-color: var(--SmartThemeAccent);
-}
-
-.lt-form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-
-/* ===== BUTTONS ===== */
-.lt-btn {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    font-size: 0.95em;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.lt-btn-primary {
-    background: linear-gradient(135deg, #8b5cf6, #ec4899);
-    color: white;
-}
-
-.lt-btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-}
-
-.lt-btn-secondary {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--SmartThemeBodyColor);
-    border: 1px solid var(--SmartThemeBorderColor);
-}
-
-.lt-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.lt-btn-group {
-    display: flex;
-    gap: 10px;
-    margin-top: 16px;
-}
-
-.lt-btn-group .lt-btn {
-    flex: 1;
-}
-
-/* ===== INFO BOX ===== */
-.lt-info-box {
-    background: rgba(139, 92, 246, 0.1);
-    border: 1px solid rgba(139, 92, 246, 0.3);
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 16px;
-    font-size: 0.85em;
-}
-
-.lt-info-box i {
-    color: var(--SmartThemeAccent);
-    margin-right: 6px;
-}
-
-/* ===== SAVED DATA DISPLAY ===== */
-.lt-saved-data {
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 16px;
-    font-size: 0.85em;
-}
-
-.lt-saved-data h4 {
-    margin: 0 0 10px 0;
-    color: var(--SmartThemeAccent);
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.lt-data-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    border-bottom: 1px dotted rgba(255, 255, 255, 0.1);
-}
-
-.lt-data-row:last-child {
-    border-bottom: none;
-}
-
-.lt-data-label {
-    opacity: 0.7;
-}
-
-.lt-data-value {
-    font-weight: 600;
     color: var(--SmartThemeQuoteColor);
 }
 
-/* ===== TOGGLE BUTTON IN BOTTOM BAR ===== */
-#life-tracker-button {
+#lt-trigger.active {
+    opacity: 1;
+    color: var(--SmartThemeQuoteColor);
+}
+
+/* ===== MAIN POPUP ===== */
+#lt-popup {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 8px;
+    min-width: 200px;
+    background: var(--SmartThemeBlurTintColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(12px);
+    z-index: 10000;
+    overflow: hidden;
+}
+
+#lt-popup.open {
+    display: block;
+    animation: ltSlideUp 0.15s ease-out;
+}
+
+@keyframes ltSlideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== MENU LIST ===== */
+.lt-menu {
+    padding: 4px 0;
+}
+
+.lt-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.15s;
+    color: var(--SmartThemeBodyColor);
+    font-size: 0.9em;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
 }
 
-#life-tracker-button:hover {
-    color: var(--SmartThemeAccent);
+.lt-menu-item:hover {
+    background: var(--SmartThemeQuoteColor);
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent);
 }
 
-/* ===== ANIMATIONS ===== */
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
+.lt-menu-item i {
+    width: 18px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.lt-menu-divider {
+    height: 1px;
+    background: var(--SmartThemeBorderColor);
+    margin: 4px 0;
+}
+
+/* ===== SETTINGS PANEL ===== */
+#lt-settings {
+    display: none;
+    padding: 12px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+#lt-settings.open {
+    display: block;
+}
+
+.lt-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.lt-settings-title {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: var(--SmartThemeBodyColor);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lt-back-btn {
+    background: transparent;
+    border: none;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+    font-size: 0.85em;
+}
+
+.lt-back-btn:hover {
+    opacity: 1;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.lt-field {
+    margin-bottom: 10px;
+}
+
+.lt-field label {
+    display: block;
+    font-size: 0.8em;
+    margin-bottom: 4px;
+    opacity: 0.7;
+    color: var(--SmartThemeBodyColor);
+}
+
+.lt-field input,
+.lt-field select {
+    width: 100%;
+    padding: 8px 10px;
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    color: var(--SmartThemeBodyColor);
+    font-size: 0.85em;
+    font-family: inherit;
+}
+
+.lt-field input:focus,
+.lt-field select:focus {
+    outline: none;
+    border-color: var(--SmartThemeQuoteColor);
+}
+
+.lt-field input::placeholder {
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.4;
+}
+
+.lt-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.lt-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--SmartThemeBorderColor);
+}
+
+.lt-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: inherit;
+}
+
+.lt-btn-primary {
+    background: var(--SmartThemeQuoteColor);
+    color: var(--SmartThemeBodyColor);
+    border-color: var(--SmartThemeQuoteColor);
+}
+
+.lt-btn-primary:hover {
+    filter: brightness(1.1);
+}
+
+.lt-btn-cancel {
+    background: transparent;
+    color: var(--SmartThemeBodyColor);
+}
+
+.lt-btn-cancel:hover {
+    background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
+}
+
+/* ===== SAVED DATA INDICATOR ===== */
+.lt-saved-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7em;
+    padding: 2px 6px;
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent);
+    border-radius: 4px;
+    color: var(--SmartThemeQuoteColor);
+}
+
+/* ===== QUICK INSERT INFO ===== */
+.lt-quick-info {
+    font-size: 0.75em;
+    opacity: 0.6;
+    padding: 6px 14px 10px;
+    color: var(--SmartThemeBodyColor);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    #lt-popup {
+        position: fixed;
+        bottom: 60px;
+        left: 10px;
+        right: 10px;
+        min-width: unset;
+        max-height: 70vh;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+
+    .lt-row {
+        grid-template-columns: 1fr;
+    }
+
+    .lt-menu-item {
+        padding: 12px 16px;
+    }
+
+    #lt-settings {
+        max-height: 50vh;
     }
 }
 
-#life-tracker-panel.open {
-    animation: slideUp 0.25s ease-out;
+@media (max-width: 480px) {
+    #lt-popup {
+        left: 5px;
+        right: 5px;
+        bottom: 55px;
+    }
+
+    .lt-field input,
+    .lt-field select {
+        padding: 10px 12px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR STYLING
+   ═══════════════════════════════════════════════════════════════ */
+
+#lt-settings::-webkit-scrollbar {
+    width: 6px;
+}
+
+#lt-settings::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#lt-settings::-webkit-scrollbar-thumb {
+    background: var(--SmartThemeBorderColor);
+    border-radius: 3px;
+}
+
+#lt-settings::-webkit-scrollbar-thumb:hover {
+    background: var(--SmartThemeQuoteColor);
 }
