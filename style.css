@@ -1,0 +1,269 @@
+/* ===== MAIN PANEL ===== */
+#life-tracker-panel {
+    display: none;
+    position: fixed;
+    bottom: 60px;
+    right: 20px;
+    width: 420px;
+    max-height: 75vh;
+    background: var(--SmartThemeBlurTintColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+#life-tracker-panel.open {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+.lt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--SmartThemeBodyColor);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.lt-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+    color: var(--SmartThemeBodyColor);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lt-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--SmartThemeBodyColor);
+    font-size: 1.3em;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.lt-close-btn:hover {
+    opacity: 1;
+}
+
+/* ===== TABS ===== */
+.lt-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.lt-tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: none;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.6;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.lt-tab i {
+    font-size: 1.2em;
+}
+
+.lt-tab:hover {
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.lt-tab.active {
+    opacity: 1;
+    background: rgba(139, 92, 246, 0.2);
+    border-bottom: 2px solid var(--SmartThemeAccent);
+}
+
+/* ===== CONTENT AREA ===== */
+.lt-content {
+    padding: 16px;
+    overflow-y: auto;
+    max-height: 50vh;
+}
+
+.lt-section {
+    display: none;
+}
+
+.lt-section.active {
+    display: block;
+}
+
+/* ===== FORM STYLES ===== */
+.lt-form-group {
+    margin-bottom: 14px;
+}
+
+.lt-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.85em;
+    color: var(--SmartThemeBodyColor);
+    opacity: 0.8;
+}
+
+.lt-form-group input,
+.lt-form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--SmartThemeBorderColor);
+    border-radius: 6px;
+    color: var(--SmartThemeBodyColor);
+    font-size: 0.9em;
+}
+
+.lt-form-group input:focus,
+.lt-form-group select:focus {
+    outline: none;
+    border-color: var(--SmartThemeAccent);
+}
+
+.lt-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ===== BUTTONS ===== */
+.lt-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.lt-btn-primary {
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    color: white;
+}
+
+.lt-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.lt-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--SmartThemeBodyColor);
+    border: 1px solid var(--SmartThemeBorderColor);
+}
+
+.lt-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.lt-btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.lt-btn-group .lt-btn {
+    flex: 1;
+}
+
+/* ===== INFO BOX ===== */
+.lt-info-box {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 0.85em;
+}
+
+.lt-info-box i {
+    color: var(--SmartThemeAccent);
+    margin-right: 6px;
+}
+
+/* ===== SAVED DATA DISPLAY ===== */
+.lt-saved-data {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 0.85em;
+}
+
+.lt-saved-data h4 {
+    margin: 0 0 10px 0;
+    color: var(--SmartThemeAccent);
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lt-data-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.1);
+}
+
+.lt-data-row:last-child {
+    border-bottom: none;
+}
+
+.lt-data-label {
+    opacity: 0.7;
+}
+
+.lt-data-value {
+    font-weight: 600;
+    color: var(--SmartThemeQuoteColor);
+}
+
+/* ===== TOGGLE BUTTON IN BOTTOM BAR ===== */
+#life-tracker-button {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#life-tracker-button:hover {
+    color: var(--SmartThemeAccent);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#life-tracker-panel.open {
+    animation: slideUp 0.25s ease-out;
+}
