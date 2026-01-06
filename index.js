@@ -891,55 +891,57 @@ function setupBabyCareHandlers(data) {
 
 function getFormData() {
     const form = document.getElementById('flt-form');
-    if (!form) return {};
+    if (!form) return state.data || {};
 
     const data = {};
     new FormData(form).forEach((value, key) => { if (value && value.trim()) data[key] = value.trim(); });
 
-    // Handle babyCare multi-baby
+    // Handle babyCare
     if (currentFormTracker === 'babyCare') {
-        const currentId = parseInt(data.currentBabyId) || state.data.currentBabyId || 1;
+        const babyNameField = document.querySelector('[name="babyName"]');
 
-        // Собираем данные текущего бейби из формы
-        const babyData = {
-            id: currentId,
-            name: data.babyName || '',
-            age: data.babyAge || '',
-            hunger: data.babyHunger || 'Satisfied',
-            hygiene: data.babyHygiene || 'Clean',
-            energy: data.babyEnergy || 'Rested',
-            mood: data.babyMood || 'Content',
-            health: data.babyHealth || 'Healthy',
-            nextCheckup: data.babyNextCheckup || '',
-            visitType: data.babyVisitType || '',
-            vaccinations: data.babyVaccinations || '',
-            testsNeeded: data.babyTests || '',
-            medications: data.babyMedications || '',
-            doctorAdvice: data.babyDoctorAdvice || '',
-            milestone: data.babyMilestone || '',
-            developmentNotes: data.babyDevelopmentNotes || '',
-            feeding: data.babyFeeding || '',
-            sleepPattern: data.babySleepPattern || ''
-        };
+        // Если есть поле имени — значит форма с бейби открыта
+        if (babyNameField) {
+            const currentId = parseInt(document.querySelector('[name="currentBabyId"]')?.value) || state.data.currentBabyId || 1;
 
-        // Копируем существующих бейби
-        let babies = JSON.parse(JSON.stringify(state.data.babies || []));
+            const babyData = {
+                id: currentId,
+                name: babyNameField.value || '',
+                age: document.querySelector('[name="babyAge"]')?.value || '',
+                hunger: document.querySelector('[name="babyHunger"]')?.value || 'Satisfied',
+                hygiene: document.querySelector('[name="babyHygiene"]')?.value || 'Clean',
+                energy: document.querySelector('[name="babyEnergy"]')?.value || 'Rested',
+                mood: document.querySelector('[name="babyMood"]')?.value || 'Content',
+                health: document.querySelector('[name="babyHealth"]')?.value || 'Healthy',
+                nextCheckup: document.querySelector('[name="babyNextCheckup"]')?.value || '',
+                visitType: document.querySelector('[name="babyVisitType"]')?.value || '',
+                vaccinations: document.querySelector('[name="babyVaccinations"]')?.value || '',
+                testsNeeded: document.querySelector('[name="babyTests"]')?.value || '',
+                medications: document.querySelector('[name="babyMedications"]')?.value || '',
+                doctorAdvice: document.querySelector('[name="babyDoctorAdvice"]')?.value || '',
+                milestone: document.querySelector('[name="babyMilestone"]')?.value || '',
+                developmentNotes: document.querySelector('[name="babyDevelopmentNotes"]')?.value || '',
+                feeding: document.querySelector('[name="babyFeeding"]')?.value || '',
+                sleepPattern: document.querySelector('[name="babySleepPattern"]')?.value || ''
+            };
 
-        // Находим и обновляем текущего бейби
-        const idx = babies.findIndex(b => b.id === currentId);
-        if (idx >= 0) {
-            babies[idx] = { ...babies[idx], ...babyData };
-        } else if (babyData.name) {
-            babies.push(babyData);
+            // Копируем других бейби, обновляем текущего
+            let babies = (state.data.babies || []).map(b =>
+                b.id === currentId ? { ...b, ...babyData } : { ...b }
+            );
+
+            // Если текущего нет в списке — добавляем
+            if (!babies.find(b => b.id === currentId)) {
+                babies.push(babyData);
+            }
+
+            data.babies = babies;
+            data.currentBabyId = currentId;
+        } else {
+            // Форма без полей — берём из state
+            data.babies = state.data.babies || [];
+            data.currentBabyId = state.data.currentBabyId;
         }
-
-        // ВАЖНО: Если есть хоть одно поле заполнено, но babies пустой — создаём бейби
-        if (babies.length === 0 && (babyData.name || data.babyName)) {
-            babies.push({ ...babyData, id: 1 });
-        }
-
-        data.babies = babies;
-        data.currentBabyId = currentId;
     }
 
     if (data.dateMode === 'system' && data.week) {
@@ -950,8 +952,7 @@ function getFormData() {
 }
 
 function updatePreview(trackerId) {
-    const form = document.getElementById('flt-form');
-    const tracker = trackerId || form?.dataset?.tracker || currentFormTracker;
+    const tracker = trackerId || currentFormTracker;
     if (!tracker) return;
 
     const preview = document.getElementById('flt-preview');
@@ -1023,23 +1024,13 @@ function updateMenuState() {
     const statusOpt = document.getElementById('flt-status-opt');
     const badge = document.getElementById('flt-active-badge');
 
-    // Проверяем есть ли реально активный трекер с данными
-    let hasActiveTracker = false;
+    const hasBabies = state.data.babies && state.data.babies.length > 0;
+    const isActive = state.active && (state.active !== 'babyCare' || hasBabies);
 
-    if (state.active) {
-        if (state.active === 'babyCare') {
-            // Для babyCare проверяем есть ли бейби
-            hasActiveTracker = state.data.babies && state.data.babies.length > 0;
-        } else {
-            // Для остальных трекеров просто проверяем active
-            hasActiveTracker = true;
-        }
-    }
-
-    if (statusOpt) statusOpt.style.display = hasActiveTracker ? 'flex' : 'none';
+    if (statusOpt) statusOpt.style.display = isActive ? 'flex' : 'none';
 
     if (badge) {
-        if (hasActiveTracker) {
+        if (isActive) {
             const t = TRACKERS[state.active];
             badge.innerHTML = `<i class="${t.icon}" style="font-size:10px;"></i>`;
             badge.style.background = t.color;
