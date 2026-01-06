@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
-   FAWN'S LIFE TRACKER - FULL VERSION
-   Mobile-friendly, all fixes applied
+   FAWN'S LIFE TRACKER v2.0
+   Mobile-friendly, flexible dates, AI/Roll modes
    ═══════════════════════════════════════════════════════════════ */
 
 import { extension_settings, getContext } from "../../../extensions.js";
@@ -38,18 +38,6 @@ const BABY_SIZES = {
     37: 'Swiss chard', 38: 'Leek', 39: 'Watermelon', 40: 'Pumpkin',
     41: 'Watermelon+', 42: 'Jackfruit'
 };
-
-const PREGNANCY_TESTS = {
-    first: ['Blood type & Rh', 'CBC', 'HIV/Hepatitis', 'Rubella immunity', 'First trimester screening', 'NT ultrasound (11-13w)'],
-    second: ['Anatomy scan (18-22w)', 'Glucose screening (24-28w)', 'Quad screen', 'Amniocentesis (if indicated)'],
-    third: ['Group B strep (35-37w)', 'Non-stress test', 'Biophysical profile', 'Growth ultrasound']
-};
-
-const CONGENITAL_CONDITIONS = [
-    'None', 'Heart defect', 'Cleft lip/palate', 'Down syndrome', 'Spina bifida',
-    'Clubfoot', 'Hip dysplasia', 'Hearing impairment', 'Vision impairment',
-    'Chromosomal abnormality', 'Other (specify)'
-];
 
 const TRACKERS = {
     conception: { id: 'conception', name: 'Conception Roll', icon: 'fa-solid fa-dice', color: '#9b59b6', description: 'Roll for pregnancy' },
@@ -115,9 +103,10 @@ function formatDate(date) {
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(-2)}`;
 }
 
-function calculateDueDate(fromDate) {
+function calculateDueDate(fromDate, weeksPregnant = 0) {
     const d = fromDate ? new Date(fromDate) : new Date();
-    d.setDate(d.getDate() + 280);
+    const daysToAdd = 280 - (weeksPregnant * 7);
+    d.setDate(d.getDate() + daysToAdd);
     return d;
 }
 
@@ -139,7 +128,7 @@ function showToast(message, type = 'success') {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   BUTTON HELPER - Generates consistent button HTML
+   UI HELPERS
    ═══════════════════════════════════════════════════════════════ */
 
 function btn(id, icon, text, primary = false, danger = false) {
@@ -147,33 +136,14 @@ function btn(id, icon, text, primary = false, danger = false) {
     let bg, color, border;
 
     if (danger) {
-        bg = '#e76f51';
-        color = 'white';
-        border = 'none';
+        bg = '#e76f51'; color = 'white'; border = 'none';
     } else if (primary) {
-        bg = 'var(--SmartThemeButtonColor)';
-        color = 'var(--SmartThemeButtonTextColor)';
-        border = 'none';
+        bg = 'var(--SmartThemeButtonColor)'; color = 'var(--SmartThemeButtonTextColor)'; border = 'none';
     } else {
-        bg = 'transparent';
-        color = 'var(--SmartThemeBodyColor)';
-        border = '1px solid var(--SmartThemeBorderColor)';
+        bg = 'transparent'; color = 'var(--SmartThemeBodyColor)'; border = '1px solid var(--SmartThemeBorderColor)';
     }
 
-    return `<button id="${id}" style="
-        background:${bg};
-        color:${color};
-        padding:${m ? '14px 20px' : '10px 16px'};
-        border-radius:${m ? '8px' : '6px'};
-        border:${border};
-        font-size:${m ? '15px' : '13px'};
-        cursor:pointer;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:8px;
-        ${m ? 'width:100%;' : 'flex:1;min-width:100px;'}
-    "><i class="${icon}"></i> ${text}</button>`;
+    return `<button id="${id}" style="background:${bg};color:${color};padding:${m ? '14px 20px' : '10px 16px'};border-radius:${m ? '8px' : '6px'};border:${border};font-size:${m ? '15px' : '13px'};cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;${m ? 'width:100%;' : 'flex:1;min-width:100px;'}"><i class="${icon}"></i> ${text}</button>`;
 }
 
 function btnRow(...buttons) {
@@ -181,80 +151,54 @@ function btnRow(...buttons) {
     return `<div style="display:flex;gap:${m ? '10px' : '8px'};justify-content:center;margin-top:${m ? '20px' : '16px'};${m ? 'flex-direction:column;' : ''}">${buttons.join('')}</div>`;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   POPUP SYSTEM
-   ═══════════════════════════════════════════════════════════════ */
-
-function closePopup() {
-    const popup = document.getElementById("flt-popup");
-    if (popup) popup.remove();
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.width = '';
-}
-
-function createPopup(content, width = "500px") {
-    closePopup();
+function modeButton(id, icon, title, subtitle, isActive = false, color = '#9b59b6') {
     const m = window.innerWidth <= 768;
-    const maxWidth = m ? "calc(100vw - 40px)" : `min(${width}, 90vw)`;
-
-    const popup = document.createElement("div");
-    popup.id = "flt-popup";
-    popup.innerHTML = `
-        <div id="flt-popup-bg" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99998;touch-action:pan-y;"></div>
-        <div id="flt-popup-content" style="
-            position:fixed;
-            top:${m ? '20px' : '50%'};
-            left:50%;
-            transform:${m ? 'translateX(-50%)' : 'translate(-50%,-50%)'};
-            width:${maxWidth};
-            max-height:${m ? 'calc(100vh - 40px)' : '80vh'};
-            background:var(--SmartThemeBlurTintColor);
-            border:1px solid var(--SmartThemeBorderColor);
-            border-radius:12px;
-            padding:${m ? '20px 16px' : '20px'};
-            z-index:99999;
-            box-sizing:border-box;
-            overflow-y:auto;
-            overscroll-behavior:contain;
-            -webkit-overflow-scrolling:touch;
-            box-shadow:0 10px 30px rgba(0,0,0,0.3);
-        ">${content}</div>
-    `;
-
-    document.body.appendChild(popup);
-    document.body.style.overflow = 'hidden';
-    if (m) {
-        document.body.style.position = 'fixed';
-        document.body.style.width = '100%';
-    }
-
-    document.getElementById("flt-popup-bg").addEventListener("click", closePopup);
-    const escHandler = (e) => { if (e.key === 'Escape') { closePopup(); document.removeEventListener('keydown', escHandler); } };
-    document.addEventListener('keydown', escHandler);
-
-    setTimeout(() => {
-        const firstInput = popup.querySelector('textarea, input, select');
-        if (firstInput) firstInput.focus();
-    }, 100);
-
-    return popup;
+    return `<button type="button" id="${id}" class="flt-mode-btn" style="
+        flex:1;
+        padding:${m ? '16px 12px' : '14px 10px'};
+        border-radius:10px;
+        border:2px solid ${isActive ? color : 'var(--SmartThemeBorderColor)'};
+        background:${isActive ? `color-mix(in srgb,${color} 20%,transparent)` : 'transparent'};
+        color:${isActive ? color : 'var(--SmartThemeBodyColor)'};
+        font-size:${m ? '14px' : '13px'};
+        cursor:pointer;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        gap:6px;
+        opacity:${isActive ? '1' : '0.6'};
+        transition:all 0.2s;
+    ">
+        <i class="${icon}" style="font-size:${m ? '22px' : '20px'};"></i>
+        <span style="font-weight:bold;font-size:${m ? '13px' : '12px'};">${title}</span>
+        <span style="font-size:${m ? '11px' : '10px'};opacity:0.7;">${subtitle}</span>
+    </button>`;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   FORM INPUT HELPER
-   ═══════════════════════════════════════════════════════════════ */
+function dateModeButton(mode, icon, label, isActive = false) {
+    const m = window.innerWidth <= 768;
+    return `<button type="button" class="flt-date-mode" data-datemode="${mode}" style="
+        flex:1;
+        padding:${m ? '12px 8px' : '10px 8px'};
+        border-radius:8px;
+        border:2px solid ${isActive ? 'var(--SmartThemeAccent)' : 'var(--SmartThemeBorderColor)'};
+        background:${isActive ? 'color-mix(in srgb,var(--SmartThemeAccent) 15%,transparent)' : 'transparent'};
+        color:var(--SmartThemeBodyColor);
+        font-size:${m ? '12px' : '11px'};
+        cursor:pointer;
+        opacity:${isActive ? '1' : '0.6'};
+        transition:all 0.2s;
+    "><i class="${icon}"></i> ${label}</button>`;
+}
 
 function formField(label, inputHtml, icon = null) {
     const m = window.innerWidth <= 768;
-    return `
-        <div style="margin-bottom:${m ? '16px' : '12px'};">
-            <label style="font-size:${m ? '13px' : '12px'};opacity:0.7;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                ${icon ? `<i class="${icon}" style="opacity:0.6;"></i>` : ''} ${label}
-            </label>
-            ${inputHtml}
-        </div>
-    `;
+    return `<div style="margin-bottom:${m ? '16px' : '12px'};">
+        <label style="font-size:${m ? '13px' : '12px'};opacity:0.7;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            ${icon ? `<i class="${icon}" style="opacity:0.6;"></i>` : ''} ${label}
+        </label>
+        ${inputHtml}
+    </div>`;
 }
 
 function textInput(name, value = '', placeholder = '') {
@@ -288,55 +232,149 @@ function formGrid(columns, content) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SYSTEM PROMPT
+   POPUP SYSTEM
+   ═══════════════════════════════════════════════════════════════ */
+
+function closePopup() {
+    const popup = document.getElementById("flt-popup");
+    if (popup) popup.remove();
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+}
+
+function createPopup(content, width = "500px") {
+    closePopup();
+    const m = window.innerWidth <= 768;
+    const maxWidth = m ? "calc(100vw - 40px)" : `min(${width}, 90vw)`;
+
+    const popup = document.createElement("div");
+    popup.id = "flt-popup";
+    popup.innerHTML = `
+        <div id="flt-popup-bg" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99998;touch-action:pan-y;"></div>
+        <div id="flt-popup-content" style="
+            position:fixed;
+            top:${m ? '20px' : '50%'};
+            left:50%;
+            transform:${m ? 'translateX(-50%)' : 'translate(-50%,-50%)'};
+            width:${maxWidth};
+            max-height:${m ? 'calc(100vh - 40px)' : '85vh'};
+            background:var(--SmartThemeBlurTintColor);
+            border:1px solid var(--SmartThemeBorderColor);
+            border-radius:12px;
+            padding:${m ? '20px 16px' : '20px'};
+            z-index:99999;
+            box-sizing:border-box;
+            overflow-y:auto;
+            overscroll-behavior:contain;
+            -webkit-overflow-scrolling:touch;
+            box-shadow:0 10px 30px rgba(0,0,0,0.3);
+        ">${content}</div>
+    `;
+
+    document.body.appendChild(popup);
+    document.body.style.overflow = 'hidden';
+    if (m) {
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+    }
+
+    document.getElementById("flt-popup-bg").addEventListener("click", closePopup);
+    const escHandler = (e) => { if (e.key === 'Escape') { closePopup(); document.removeEventListener('keydown', escHandler); } };
+    document.addEventListener('keydown', escHandler);
+
+    setTimeout(() => {
+        const firstInput = popup.querySelector('textarea, input[type="text"], input[type="number"], select');
+        if (firstInput) firstInput.focus();
+    }, 100);
+
+    return popup;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SYSTEM PROMPT GENERATION
    ═══════════════════════════════════════════════════════════════ */
 
 function generateSystemPrompt() {
     if (!state.active) return '';
     const s = extension_settings[extensionName];
+    const d = state.data;
 
     let prompt = `[OOC: LIFE TRACKER ACTIVE - ${state.active.toUpperCase()}]
-At the END of your response, include a tracker update.
-Format: [TRACKER:type|field=value|field=value|...]
-Fill ALL fields based on scene. Extension renders it as widget.
+At END of your response, include tracker update in format:
+[TRACKER:type|field=value|field=value|...]
 
 `;
 
     switch (state.active) {
         case 'conception':
-            prompt += `CONCEPTION ATTEMPT - Result: ${state.data.result || 'Pending'}
-${state.data.result === 'Yes' ? `Character NOW PREGNANT but doesn't know. Show subtle signs. Due: ${state.data.dueDate}` : ''}
-[TRACKER:conception|roll=${state.data.roll || '??'}|threshold=${state.data.threshold || 20}|result=${state.data.result || '??'}|dueDate=${state.data.dueDate || '??'}]`;
+            if (d.mode === 'ai') {
+                prompt += `CONCEPTION ATTEMPT - AI DECIDES
+Decide if conception happens based on scene context, timing, character health.
+`;
+            } else {
+                prompt += `CONCEPTION - Result: ${d.result || 'Pending'}
+${d.result === 'Yes' ? 'Character NOW PREGNANT but may not know. Show subtle signs.' : ''}
+`;
+            }
+
+            // Due date instructions
+            if (d.dateMode === 'ai') {
+                prompt += `Due Date: YOU calculate based on your world's calendar (+280 days from conception)\n`;
+            } else if (d.dateMode === 'lore' && d.loreDate) {
+                prompt += `Due Date: Calculate +280 days from: ${d.loreDate}\n`;
+            } else if (d.dateMode === 'manual' && d.dueDate) {
+                prompt += `Due Date: ${d.dueDate} (player set)\n`;
+            } else if (d.dateMode === 'system' && d.dueDate) {
+                prompt += `Due Date: ${d.dueDate} (from system time)\n`;
+            }
+
+            prompt += `\n[TRACKER:conception|roll=${d.roll || '??'}|threshold=${d.threshold || '??'}|result=${d.result || '??'}|dueDate=${d.dueDate || '??'}]`;
             break;
 
         case 'pregnancy':
-            const week = parseInt(state.data.week) || 1;
-            const trimester = week <= 13 ? 'first' : week <= 26 ? 'second' : 'third';
-            prompt += `PREGNANCY - Week ${week}
-Update: week, size, symptoms, risks, nextVisit, testsNeeded
-Gender: ultrasoundGender can be WRONG (${s.ultrasoundErrorChance}% error)
-${s.miscarriageEnabled ? 'MISCARRIAGE possible if High/Critical risks ignored' : ''}
-${s.autoLaborEnabled ? 'LABOR can start at 37+ weeks' : ''}
-[TRACKER:pregnancy|week=??|size=??|knowledge=??|ultrasoundGender=??|symptoms=??|risks=??|nextVisit=??|testsNeeded=??|dueDate=${state.data.dueDate || '??'}]`;
+            const week = parseInt(d.week) || 1;
+            prompt += `PREGNANCY - Week ${week}, Size: ${BABY_SIZES[week] || '??'}
+Update weekly: symptoms, size, risks, nextVisit, testsNeeded
+Gender: ultrasoundGender can be WRONG (${s.ultrasoundErrorChance}% chance)
+${s.miscarriageEnabled ? 'Miscarriage possible if High/Critical risks' : ''}
+${s.autoLaborEnabled && week >= 37 ? 'LABOR can start anytime!' : ''}
+
+`;
+            // Due date instructions for pregnancy
+            if (d.dateMode === 'ai') {
+                prompt += `Due Date: YOU decide based on story context\n`;
+            } else if (d.dateMode === 'lore' && d.loreStartDate) {
+                prompt += `Due Date: Calculate from pregnancy start: ${d.loreStartDate} (add ${40 - week} weeks)\n`;
+            } else if (d.dateMode === 'manual' && d.dueDate) {
+                prompt += `Due Date: ${d.dueDate} (player set)\n`;
+            } else if (d.dateMode === 'system' && d.dueDate) {
+                prompt += `Due Date: ${d.dueDate} (auto-calculated from system time)\n`;
+            }
+
+            prompt += `\n[TRACKER:pregnancy|week=${week}|size=${BABY_SIZES[week] || '??'}|knowledge=${d.knowledge || '??'}|ultrasoundGender=${d.ultrasoundGender || '??'}|symptoms=??|risks=${d.risks || 'Stable'}|nextVisit=??|testsNeeded=??|dueDate=${d.dueDate || '??'}]`;
             break;
 
         case 'birth':
             prompt += `BIRTH IN PROGRESS
-Generate: name, gender, weight, height, apgar, health, features
-${state.ultrasoundGender ? `Ultrasound said ${state.ultrasoundGender} - verify at birth!` : ''}
-[TRACKER:birth|name=??|gender=??|weight=??|height=??|apgar=??|health=??|congenitalConditions=??|time=??]`;
+Generate: name, gender (verify ultrasound!), weight (kg), height (cm), apgar, health
+${state.ultrasoundGender ? `Ultrasound said: ${state.ultrasoundGender}` : ''}
+
+[TRACKER:birth|name=??|gender=??|weight=??|height=??|apgar=??|health=??|time=??]`;
             break;
 
         case 'babyCare':
-            prompt += `BABY CARE - ${state.data.name || 'Baby'}
-Update: hunger, hygiene, energy, mood, health, milestones
-[TRACKER:babyCare|name=${state.data.name || '??'}|age=??|hunger=??|hygiene=??|energy=??|mood=??|health=??|milestone=??]`;
+            prompt += `BABY CARE - ${d.name || 'Baby'}
+Update based on scene: hunger, hygiene, energy, mood, health, milestones
+
+[TRACKER:babyCare|name=${d.name || '??'}|age=${d.age || '??'}|hunger=??|hygiene=??|energy=??|mood=??|health=??|milestone=??]`;
             break;
 
         case 'miscarriage':
-            prompt += `PREGNANCY LOSS - Week ${state.data.week || '??'}
-Document sensitively. Emotional state is PLAYER'S CHOICE.
-[TRACKER:miscarriage|week=${state.data.week || '??'}|cause=??|physical=??|medicalCare=??]`;
+            prompt += `PREGNANCY LOSS - Week ${d.week || '??'}
+Document sensitively. Emotional response is PLAYER'S choice.
+
+[TRACKER:miscarriage|week=${d.week || '??'}|cause=??|physical=??|medicalCare=??]`;
             break;
     }
 
@@ -345,11 +383,11 @@ Document sensitively. Emotional state is PLAYER'S CHOICE.
 
 function updateSystemPrompt() {
     const prompt = generateSystemPrompt();
-    if (prompt) {
-        setExtensionPrompt('fawn-life-tracker', prompt, extension_prompt_types.IN_CHAT, 0, true, true, null, extension_prompt_roles.SYSTEM);
-    } else {
-        setExtensionPrompt('fawn-life-tracker', '', extension_prompt_types.IN_CHAT, 0, true, true, null, extension_prompt_roles.SYSTEM);
-    }
+    setExtensionPrompt('fawn-life-tracker', prompt, extension_prompt_types.IN_CHAT, 0, true, true, null, extension_prompt_roles.SYSTEM);
+}
+
+function clearSystemPrompt() {
+    setExtensionPrompt('fawn-life-tracker', '', extension_prompt_types.IN_CHAT, 0, true, true, null, extension_prompt_roles.SYSTEM);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -360,25 +398,36 @@ function generateTrackerHTML(trackerId, data) {
     const m = window.innerWidth <= 768;
     const baseStyle = `font-family:'Courier New',monospace;font-size:${m ? '0.8em' : '0.85em'};color:var(--SmartThemeBodyColor);`;
 
-    switch (trackerId) {
+    switch (trackerId.toLowerCase()) {
         case 'conception': return genConceptionHTML(data, baseStyle);
         case 'pregnancy': return genPregnancyHTML(data, baseStyle, m);
         case 'birth': return genBirthHTML(data, baseStyle, m);
-        case 'babycare':
-        case 'babyCare': return genBabyCareHTML(data, baseStyle, m);
+        case 'babycare': return genBabyCareHTML(data, baseStyle, m);
         case 'miscarriage': return genMiscarriageHTML(data, baseStyle, m);
         default: return '';
     }
 }
 
 function genConceptionHTML(d, baseStyle) {
+    const mode = d.mode || 'roll';
     const isYes = (d.result || '').toLowerCase() === 'yes';
-    const color = isYes ? '#4caf50' : '#e76f51';
+    const isPending = !d.result || d.result === '' || d.result === '??';
+    const color = isPending ? '#9b59b6' : (isYes ? '#4caf50' : '#e76f51');
+
+    let resultText = '';
+    if (mode === 'ai' && isPending) {
+        resultText = '<span style="opacity:0.7;">AI will decide...</span>';
+    } else if (isPending) {
+        resultText = '<span style="opacity:0.7;">Roll the dice!</span>';
+    } else {
+        resultText = `<span style="color:${color};font-weight:bold;">${isYes ? '✓ CONCEIVED' : '✗ NOT THIS TIME'}</span>`;
+    }
+
     return `<div style="${baseStyle}padding:12px;text-align:center;border:1px dashed var(--SmartThemeBorderColor);border-radius:8px;">
-        <div style="opacity:0.7;font-size:0.9em;margin-bottom:8px;"><i class="fa-solid fa-dice"></i> CONCEPTION ROLL</div>
-        <div style="font-size:1.5em;margin-bottom:8px;"><span style="color:var(--SmartThemeAccent);font-weight:bold;">${d.roll || '??'}</span><span style="opacity:0.4;font-size:0.6em;"> / ${d.threshold || 20}</span></div>
-        <div style="font-weight:bold;color:${color};font-size:1.2em;">${isYes ? '✓ CONCEIVED' : '✗ NOT THIS TIME'}</div>
-        ${isYes && d.dueDate ? `<div style="margin-top:8px;font-size:0.85em;opacity:0.7;"><i class="fa-regular fa-calendar"></i> Due: ${d.dueDate}</div>` : ''}
+        <div style="opacity:0.7;font-size:0.9em;margin-bottom:8px;"><i class="fa-solid fa-${mode === 'ai' ? 'wand-magic-sparkles' : 'dice'}"></i> CONCEPTION ${mode === 'ai' ? '(AI)' : 'ROLL'}</div>
+        ${mode !== 'ai' && d.roll ? `<div style="font-size:1.5em;margin-bottom:8px;"><span style="color:var(--SmartThemeAccent);font-weight:bold;">${d.roll}</span><span style="opacity:0.4;font-size:0.6em;"> / ${d.threshold || 20}</span></div>` : ''}
+        <div style="font-size:1.1em;margin-bottom:8px;">${resultText}</div>
+        ${isYes && d.dueDate && d.dueDate !== '??' ? `<div style="font-size:0.85em;opacity:0.7;"><i class="fa-regular fa-calendar"></i> Due: ${d.dueDate}</div>` : ''}
     </div>`;
 }
 
@@ -389,7 +438,7 @@ function genPregnancyHTML(d, baseStyle, m) {
     const riskColor = riskColors[d.risks] || '#4caf50';
 
     return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;">
-        <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#e91e63;text-transform:uppercase;letter-spacing:1px;"><i class="fa-solid fa-person-pregnant"></i> Pregnancy</div>
+        <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#e91e63;text-transform:uppercase;letter-spacing:1px;"><i class="fa-solid fa-person-pregnant"></i> Pregnancy ${d.knowledge && d.knowledge !== 'Hidden' ? `<span style="font-size:0.7em;opacity:0.7;">• ${d.knowledge}</span>` : ''}</div>
         <div style="display:grid;grid-template-columns:${m ? '1fr 1fr' : 'repeat(4, 1fr)'};gap:8px;margin-bottom:10px;">
             <div><span style="opacity:0.5;font-size:0.85em;">Week</span><br><strong>${week}</strong></div>
             <div><span style="opacity:0.5;font-size:0.85em;">Size</span><br><strong>${size}</strong></div>
@@ -474,13 +523,18 @@ function processAIResponse(messageIndex) {
     const parsed = parseTrackerFromText(message.mes);
     if (!parsed) return;
 
+    // Keep mode settings when updating
+    const preserveKeys = ['mode', 'dateMode', 'loreDate', 'loreStartDate'];
+    const preserved = {};
+    preserveKeys.forEach(k => { if (state.data[k]) preserved[k] = state.data[k]; });
+
     if (parsed.trackerId !== state.active) {
         state.active = parsed.trackerId;
     }
 
-    state.data = { ...state.data, ...parsed.data };
+    state.data = { ...state.data, ...parsed.data, ...preserved };
     state.lastMessageId = messageIndex;
-    state.history.push({ type: parsed.trackerId, data: { ...parsed.data }, messageId: messageIndex, timestamp: Date.now() });
+    state.history.push({ type: parsed.trackerId, data: { ...state.data }, messageId: messageIndex, timestamp: Date.now() });
 
     saveState();
     saveTrackerDisplay(messageIndex, parsed.trackerId, state.data);
@@ -597,37 +651,143 @@ function showTrackerForm(trackerId) {
     document.getElementById("flt-menu").style.display = "none";
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   CONCEPTION FORM
+   ═══════════════════════════════════════════════════════════════ */
+
 function buildConceptionForm(data) {
+    const m = window.innerWidth <= 768;
     const threshold = data.threshold || extension_settings[extensionName].conceptionThreshold || 20;
+    const mode = data.mode || 'roll';
+    const dateMode = data.dateMode || 'ai';
+
     return `
-        <div style="text-align:center;padding:20px 0;">
-            <div style="font-size:60px;margin-bottom:15px;">🎲</div>
-            <div style="margin-bottom:20px;">
-                <label style="font-size:13px;opacity:0.7;">Conception Threshold (%)</label>
-                <input type="range" id="flt-threshold" name="threshold" min="1" max="100" value="${threshold}" style="width:100%;margin-top:8px;">
-                <div id="flt-threshold-display" style="font-size:18px;color:var(--SmartThemeAccent);font-weight:bold;">${threshold}%</div>
-            </div>
-            <button type="button" id="flt-roll-btn" style="background:#9b59b6;color:white;padding:15px 40px;border-radius:10px;border:none;font-size:16px;cursor:pointer;width:100%;">
-                <i class="fa-solid fa-dice"></i> Roll for Conception!
-            </button>
-            <div id="flt-roll-result" style="margin-top:20px;display:none;"></div>
-            <input type="hidden" name="roll" id="flt-roll" value="${data.roll || ''}">
-            <input type="hidden" name="result" id="flt-result" value="${data.result || ''}">
-            <input type="hidden" name="dueDate" id="flt-dueDate" value="${data.dueDate || ''}">
+        <!-- Mode Selection -->
+        <div style="display:flex;gap:${m ? '10px' : '12px'};margin-bottom:20px;${m ? 'flex-direction:column;' : ''}">
+            ${modeButton('flt-mode-roll', 'fa-solid fa-dice', 'Roll Dice', 'You control odds', mode === 'roll', '#9b59b6')}
+            ${modeButton('flt-mode-ai', 'fa-solid fa-wand-magic-sparkles', 'AI Decides', 'Story-driven', mode === 'ai', '#9b59b6')}
         </div>
+
+        <!-- Roll Section -->
+        <div id="flt-roll-section" style="display:${mode === 'roll' ? 'block' : 'none'};text-align:center;padding:15px 0;border:1px dashed var(--SmartThemeBorderColor);border-radius:10px;margin-bottom:20px;">
+            <div style="margin-bottom:15px;">
+                <label style="font-size:13px;opacity:0.7;display:block;margin-bottom:8px;">Conception Chance</label>
+                <input type="range" id="flt-threshold" name="threshold" min="1" max="100" value="${threshold}" style="width:80%;max-width:250px;">
+                <div id="flt-threshold-display" style="font-size:28px;color:#9b59b6;font-weight:bold;margin-top:5px;">${threshold}%</div>
+            </div>
+            <button type="button" id="flt-roll-btn" style="background:#9b59b6;color:white;padding:${m ? '16px 30px' : '14px 30px'};border-radius:10px;border:none;font-size:${m ? '16px' : '15px'};cursor:pointer;">
+                <i class="fa-solid fa-dice"></i> Roll!
+            </button>
+            <div id="flt-roll-result" style="margin-top:20px;display:${data.roll ? 'block' : 'none'};">
+                ${data.roll ? `
+                    <div style="font-size:36px;color:${data.result === 'Yes' ? '#4caf50' : '#e76f51'};font-weight:bold;">${data.roll}</div>
+                    <div style="font-size:14px;opacity:0.6;">needed ≤ ${data.threshold || threshold}</div>
+                    <div style="font-size:16px;margin-top:8px;color:${data.result === 'Yes' ? '#4caf50' : '#e76f51'};">${data.result === 'Yes' ? '✓ Conceived!' : '✗ Not this time'}</div>
+                ` : ''}
+            </div>
+        </div>
+
+        <!-- AI Section -->
+        <div id="flt-ai-section" style="display:${mode === 'ai' ? 'block' : 'none'};text-align:center;padding:20px;border:1px dashed var(--SmartThemeBorderColor);border-radius:10px;margin-bottom:20px;">
+            <div style="font-size:40px;margin-bottom:10px;">🎭</div>
+            <div style="font-size:${m ? '14px' : '13px'};opacity:0.8;">AI will decide based on scene context</div>
+            <div style="font-size:${m ? '12px' : '11px'};opacity:0.5;margin-top:8px;">Result appears in AI's response</div>
+        </div>
+
+        <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
+
+        <!-- Due Date Mode -->
+        <div style="margin-bottom:15px;">
+            <label style="font-size:${m ? '14px' : '13px'};opacity:0.8;display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <i class="fa-solid fa-calendar"></i> Due Date
+            </label>
+            <div style="display:flex;gap:8px;margin-bottom:12px;${m ? 'flex-wrap:wrap;' : ''}">
+                ${dateModeButton('ai', 'fa-solid fa-robot', 'AI calculates', dateMode === 'ai')}
+                ${dateModeButton('system', 'fa-solid fa-clock', 'From now', dateMode === 'system')}
+                ${dateModeButton('lore', 'fa-solid fa-book', 'Lore date', dateMode === 'lore')}
+                ${dateModeButton('manual', 'fa-solid fa-pen', 'Manual', dateMode === 'manual')}
+            </div>
+
+            <div id="flt-date-system" style="display:${dateMode === 'system' ? 'block' : 'none'};padding:10px;background:color-mix(in srgb,var(--SmartThemeAccent) 10%,transparent);border-radius:8px;font-size:12px;">
+                <i class="fa-solid fa-info-circle"></i> Due date: <strong>${formatDate(calculateDueDate())}</strong> (280 days from now)
+            </div>
+
+            <div id="flt-date-lore" style="display:${dateMode === 'lore' ? 'block' : 'none'};margin-top:10px;">
+                <input type="text" id="flt-lore-date-input" name="loreDate" value="${data.loreDate || ''}" placeholder="e.g., March 15, Year 847" style="width:100%;padding:${m ? '12px' : '10px'};background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);font-size:${m ? '14px' : '13px'};box-sizing:border-box;">
+                <div style="font-size:11px;opacity:0.5;margin-top:6px;">AI adds 280 days to this date</div>
+            </div>
+
+            <div id="flt-date-manual" style="display:${dateMode === 'manual' ? 'block' : 'none'};margin-top:10px;">
+                <input type="text" id="flt-manual-due-input" name="dueDate" value="${data.dueDate || ''}" placeholder="e.g., December 20, Year 847" style="width:100%;padding:${m ? '12px' : '10px'};background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);font-size:${m ? '14px' : '13px'};box-sizing:border-box;">
+            </div>
+        </div>
+
+        <!-- Hidden fields -->
+        <input type="hidden" name="mode" id="flt-mode" value="${mode}">
+        <input type="hidden" name="dateMode" id="flt-date-mode" value="${dateMode}">
+        <input type="hidden" name="roll" id="flt-roll" value="${data.roll || ''}">
+        <input type="hidden" name="result" id="flt-result" value="${data.result || ''}">
     `;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   PREGNANCY FORM
+   ═══════════════════════════════════════════════════════════════ */
+
 function buildPregnancyForm(data) {
-    return formGrid(2, `
-        ${formField('Week (1-42)', numberInput('week', data.week || '', '1', '42', 'Current week'), 'fa-solid fa-calendar-week')}
-        ${formField('Knowledge', selectInput('knowledge', ['Hidden', 'Suspected', 'Confirmed'], data.knowledge || 'Hidden'), 'fa-solid fa-eye')}
-        ${formField('Ultrasound Gender', selectInput('ultrasoundGender', ['Unknown', 'Boy', 'Girl'], data.ultrasoundGender || 'Unknown'), 'fa-solid fa-venus-mars')}
-        ${formField('Due Date', `<input type="date" name="dueDate" value="${data.dueDate || ''}" style="width:100%;padding:10px;background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);box-sizing:border-box;">`, 'fa-solid fa-calendar')}
-        ${formField('Next Visit', textInput('nextVisit', data.nextVisit || '', 'e.g., 2 weeks'), 'fa-solid fa-calendar-check')}
-        ${formField('Risks', selectInput('risks', ['Stable', 'Mild Concern', 'Moderate Risk', 'High Risk', 'Critical'], data.risks || 'Stable'), 'fa-solid fa-heart-pulse')}
-    `) + formField('Current Symptoms', textareaInput('symptoms', data.symptoms || '', 'AI will fill based on week'), 'fa-solid fa-head-side-virus');
+    const m = window.innerWidth <= 768;
+    const dateMode = data.dateMode || 'ai';
+    const week = data.week || '';
+
+    return `
+        <!-- Due Date Mode -->
+        <div style="margin-bottom:20px;">
+            <label style="font-size:${m ? '14px' : '13px'};opacity:0.8;display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <i class="fa-solid fa-calendar"></i> Due Date Calculation
+            </label>
+            <div style="display:flex;gap:8px;margin-bottom:12px;${m ? 'flex-wrap:wrap;' : ''}">
+                ${dateModeButton('ai', 'fa-solid fa-robot', 'AI decides', dateMode === 'ai')}
+                ${dateModeButton('system', 'fa-solid fa-clock', 'Auto (real time)', dateMode === 'system')}
+                ${dateModeButton('lore', 'fa-solid fa-book', 'From lore start', dateMode === 'lore')}
+                ${dateModeButton('manual', 'fa-solid fa-pen', 'Set manually', dateMode === 'manual')}
+            </div>
+
+            <div id="flt-date-ai" style="display:${dateMode === 'ai' ? 'block' : 'none'};padding:10px;background:color-mix(in srgb,var(--SmartThemeAccent) 10%,transparent);border-radius:8px;font-size:12px;">
+                <i class="fa-solid fa-info-circle"></i> AI will determine due date based on story context
+            </div>
+
+            <div id="flt-date-system" style="display:${dateMode === 'system' ? 'block' : 'none'};padding:10px;background:color-mix(in srgb,var(--SmartThemeAccent) 10%,transparent);border-radius:8px;font-size:12px;">
+                <i class="fa-solid fa-info-circle"></i> Calculated from current week: <strong id="flt-system-due">${week ? formatDate(calculateDueDate(new Date(), parseInt(week))) : '(enter week)'}</strong>
+            </div>
+
+            <div id="flt-date-lore" style="display:${dateMode === 'lore' ? 'block' : 'none'};margin-top:10px;">
+                <input type="text" name="loreStartDate" value="${data.loreStartDate || ''}" placeholder="Pregnancy started: e.g., January 1, Year 847" style="width:100%;padding:${m ? '12px' : '10px'};background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);font-size:${m ? '14px' : '13px'};box-sizing:border-box;">
+                <div style="font-size:11px;opacity:0.5;margin-top:6px;">AI calculates due date from this + 40 weeks</div>
+            </div>
+
+            <div id="flt-date-manual" style="display:${dateMode === 'manual' ? 'block' : 'none'};margin-top:10px;">
+                <input type="text" name="dueDate" value="${data.dueDate || ''}" placeholder="Due date: e.g., October 8, Year 847" style="width:100%;padding:${m ? '12px' : '10px'};background:var(--SmartThemeInputColor);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;color:var(--SmartThemeBodyColor);font-size:${m ? '14px' : '13px'};box-sizing:border-box;">
+            </div>
+        </div>
+
+        <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
+
+        ${formGrid(2, `
+            ${formField('Current Week (1-42)', numberInput('week', data.week || '', '1', '42', 'Week of pregnancy'), 'fa-solid fa-calendar-week')}
+            ${formField('Knowledge', selectInput('knowledge', ['Hidden', 'Suspected', 'Confirmed'], data.knowledge || 'Hidden'), 'fa-solid fa-eye')}
+            ${formField('Ultrasound Gender', selectInput('ultrasoundGender', ['Unknown', 'Boy', 'Girl'], data.ultrasoundGender || 'Unknown'), 'fa-solid fa-venus-mars')}
+            ${formField('Risk Level', selectInput('risks', ['Stable', 'Mild Concern', 'Moderate Risk', 'High Risk', 'Critical'], data.risks || 'Stable'), 'fa-solid fa-heart-pulse')}
+        `)}
+
+        ${formField('Current Symptoms', textareaInput('symptoms', data.symptoms || '', 'Leave empty for AI to fill based on week'), 'fa-solid fa-head-side-virus')}
+
+        <input type="hidden" name="dateMode" id="flt-date-mode" value="${dateMode}">
+    `;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   OTHER FORMS
+   ═══════════════════════════════════════════════════════════════ */
 
 function buildBirthForm(data) {
     return formGrid(2, `
@@ -652,8 +812,9 @@ function buildBabyCareForm(data) {
 }
 
 function buildMiscarriageForm(data) {
+    const m = window.innerWidth <= 768;
     return `
-        <div style="background:color-mix(in srgb,#6c757d 10%,transparent);border:1px solid #6c757d;border-radius:8px;padding:12px;margin-bottom:15px;font-size:13px;">
+        <div style="background:color-mix(in srgb,#6c757d 10%,transparent);border:1px solid #6c757d;border-radius:8px;padding:12px;margin-bottom:15px;font-size:${m ? '13px' : '12px'};">
             <i class="fa-solid fa-info-circle"></i> Emotional response is <strong>your choice</strong> to roleplay.
         </div>
         ${formField('Week of Loss', numberInput('week', data.week || '', '1', '42', 'Pregnancy week'), 'fa-solid fa-calendar')}
@@ -661,41 +822,127 @@ function buildMiscarriageForm(data) {
     `;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   FORM HANDLERS
+   ═══════════════════════════════════════════════════════════════ */
+
 function setupTrackerHandlers(trackerId, data) {
+    // Date mode buttons (shared)
+    setupDateModeHandlers();
+
     if (trackerId === 'conception') {
-        const slider = document.getElementById('flt-threshold');
-        const display = document.getElementById('flt-threshold-display');
-        slider?.addEventListener('input', () => display.textContent = slider.value + '%');
-
-        document.getElementById('flt-roll-btn')?.addEventListener('click', () => {
-            const threshold = parseInt(slider.value) || 20;
-            const roll = Math.floor(Math.random() * 100) + 1;
-            const success = roll <= threshold;
-
-            document.getElementById('flt-roll').value = roll;
-            document.getElementById('flt-result').value = success ? 'Yes' : 'No';
-            if (success) document.getElementById('flt-dueDate').value = formatDate(calculateDueDate());
-
-            document.getElementById('flt-roll-result').style.display = 'block';
-            document.getElementById('flt-roll-result').innerHTML = `
-                <div style="font-size:50px;animation:flt-bounce 0.5s;">${success ? '🎉' : '😔'}</div>
-                <div style="font-size:28px;font-weight:bold;color:${success ? '#4caf50' : '#e76f51'};">${roll} / ${threshold}</div>
-                <div style="font-size:16px;margin-top:8px;color:${success ? '#4caf50' : '#e76f51'};">${success ? '✓ Conceived!' : '✗ Not this time'}</div>
-            `;
-            updatePreview('conception');
-        });
+        setupConceptionHandlers(data);
     }
 
     if (trackerId === 'pregnancy') {
-        document.querySelector('[name="week"]')?.addEventListener('change', (e) => {
-            const week = parseInt(e.target.value);
-            if (week && BABY_SIZES[week]) {
-                const sizeField = document.querySelector('[name="size"]');
-                if (sizeField) sizeField.value = BABY_SIZES[week];
-            }
-            updatePreview('pregnancy');
-        });
+        setupPregnancyHandlers(data);
     }
+}
+
+function setupDateModeHandlers() {
+    document.querySelectorAll('.flt-date-mode').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const mode = this.dataset.datemode;
+            document.getElementById('flt-date-mode').value = mode;
+
+            // Update button styles
+            document.querySelectorAll('.flt-date-mode').forEach(b => {
+                const isActive = b.dataset.datemode === mode;
+                b.style.border = `2px solid ${isActive ? 'var(--SmartThemeAccent)' : 'var(--SmartThemeBorderColor)'}`;
+                b.style.background = isActive ? 'color-mix(in srgb,var(--SmartThemeAccent) 15%,transparent)' : 'transparent';
+                b.style.opacity = isActive ? '1' : '0.6';
+            });
+
+            // Show/hide sections
+            ['ai', 'system', 'lore', 'manual'].forEach(m => {
+                const el = document.getElementById(`flt-date-${m}`);
+                if (el) el.style.display = m === mode ? 'block' : 'none';
+            });
+
+            updatePreview(document.getElementById('flt-form').closest('#flt-popup-content').querySelector('[data-tracker]')?.dataset.tracker || state.active || 'conception');
+        });
+    });
+}
+
+function setupConceptionHandlers(data) {
+    // Mode toggle (Roll vs AI)
+    ['roll', 'ai'].forEach(mode => {
+        document.getElementById(`flt-mode-${mode}`)?.addEventListener('click', function() {
+            document.getElementById('flt-mode').value = mode;
+
+            // Update button styles
+            ['roll', 'ai'].forEach(m => {
+                const btn = document.getElementById(`flt-mode-${m}`);
+                if (btn) {
+                    const isActive = m === mode;
+                    btn.style.border = `2px solid ${isActive ? '#9b59b6' : 'var(--SmartThemeBorderColor)'}`;
+                    btn.style.background = isActive ? 'color-mix(in srgb,#9b59b6 20%,transparent)' : 'transparent';
+                    btn.style.color = isActive ? '#9b59b6' : 'var(--SmartThemeBodyColor)';
+                    btn.style.opacity = isActive ? '1' : '0.6';
+                }
+            });
+
+            // Show/hide sections
+            document.getElementById('flt-roll-section').style.display = mode === 'roll' ? 'block' : 'none';
+            document.getElementById('flt-ai-section').style.display = mode === 'ai' ? 'block' : 'none';
+
+            // Clear roll if switching to AI
+            if (mode === 'ai') {
+                document.getElementById('flt-roll').value = '';
+                document.getElementById('flt-result').value = '';
+            }
+
+            updatePreview('conception');
+        });
+    });
+
+    // Threshold slider
+    const slider = document.getElementById('flt-threshold');
+    const display = document.getElementById('flt-threshold-display');
+    slider?.addEventListener('input', () => {
+        display.textContent = slider.value + '%';
+    });
+
+    // Roll button
+    document.getElementById('flt-roll-btn')?.addEventListener('click', () => {
+        const threshold = parseInt(slider?.value) || 20;
+        const roll = Math.floor(Math.random() * 100) + 1;
+        const success = roll <= threshold;
+
+        document.getElementById('flt-roll').value = roll;
+        document.getElementById('flt-result').value = success ? 'Yes' : 'No';
+
+        // Update due date if system mode
+        const dateMode = document.getElementById('flt-date-mode')?.value;
+        if (dateMode === 'system' && success) {
+            const dueDateInput = document.querySelector('[name="dueDate"]');
+            if (dueDateInput) dueDateInput.value = formatDate(calculateDueDate());
+        }
+
+        const resultDiv = document.getElementById('flt-roll-result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = `
+            <div style="font-size:50px;animation:flt-bounce 0.5s;">${success ? '🎉' : '😔'}</div>
+            <div style="font-size:36px;font-weight:bold;color:${success ? '#4caf50' : '#e76f51'};">${roll}</div>
+            <div style="font-size:14px;opacity:0.6;">needed ≤ ${threshold}</div>
+            <div style="font-size:18px;margin-top:10px;color:${success ? '#4caf50' : '#e76f51'};font-weight:bold;">${success ? '✓ Conceived!' : '✗ Not this time'}</div>
+        `;
+
+        updatePreview('conception');
+    });
+}
+
+function setupPregnancyHandlers(data) {
+    // Week change -> update system due date
+    const weekInput = document.querySelector('[name="week"]');
+    weekInput?.addEventListener('input', () => {
+        const week = parseInt(weekInput.value) || 0;
+        const systemDue = document.getElementById('flt-system-due');
+        if (systemDue && week > 0) {
+            systemDue.textContent = formatDate(calculateDueDate(new Date(), week));
+        }
+        updatePreview('pregnancy');
+    });
 }
 
 function getFormData() {
@@ -704,6 +951,12 @@ function getFormData() {
     new FormData(form).forEach((value, key) => {
         if (value && value.trim()) data[key] = value.trim();
     });
+
+    // Handle system date mode for pregnancy
+    if (data.dateMode === 'system' && data.week) {
+        data.dueDate = formatDate(calculateDueDate(new Date(), parseInt(data.week)));
+    }
+
     return data;
 }
 
@@ -716,7 +969,10 @@ function startTracker(trackerId, formData) {
     state.active = trackerId;
     state.data = formData;
     state.history = [];
-    if (trackerId === 'conception' && formData.result === 'Yes') state.dueDate = formData.dueDate;
+
+    if (trackerId === 'conception' && formData.result === 'Yes') {
+        state.dueDate = formData.dueDate;
+    }
 
     saveState();
     updateSystemPrompt();
@@ -747,7 +1003,7 @@ function showStatusPopup() {
         <div style="margin-bottom:${m ? '20px' : '16px'};">${generateTrackerHTML(state.active, state.data)}</div>
 
         ${btnRow(
-            btn('flt-edit', 'fa-solid fa-pen', 'Edit Data', true),
+            btn('flt-edit', 'fa-solid fa-pen', 'Edit', true),
             btn('flt-stop', 'fa-solid fa-stop', 'Stop', false, true)
         )}
     `;
@@ -757,7 +1013,7 @@ function showStatusPopup() {
     document.getElementById('flt-edit').addEventListener('click', () => { closePopup(); showTrackerForm(state.active); });
     document.getElementById('flt-stop').addEventListener('click', () => {
         if (confirm('Stop tracking?')) {
-            resetState(); saveState(); removeOldTrackerDisplay(); updateSystemPrompt(); closePopup(); updateMenuState();
+            resetState(); saveState(); removeOldTrackerDisplay(); clearSystemPrompt(); closePopup(); updateMenuState();
             showToast('Tracking stopped', 'warning');
         }
     });
@@ -775,7 +1031,7 @@ function showSettingsPopup() {
     const toggle = (id, label, key) => `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border-radius:8px;margin-bottom:10px;">
             <span style="font-size:${m ? '14px' : '13px'};">${label}</span>
-            <div id="${id}" data-key="${key}" style="width:50px;height:26px;background:${s[key] ? 'var(--SmartThemeAccent)' : 'var(--SmartThemeBorderColor)'};border-radius:13px;cursor:pointer;position:relative;">
+            <div id="${id}" data-key="${key}" style="width:50px;height:26px;background:${s[key] ? 'var(--SmartThemeAccent)' : 'var(--SmartThemeBorderColor)'};border-radius:13px;cursor:pointer;position:relative;transition:background 0.2s;">
                 <div style="position:absolute;top:3px;left:${s[key] ? '27px' : '3px'};width:20px;height:20px;background:white;border-radius:50%;transition:left 0.2s;"></div>
             </div>
         </div>
@@ -787,7 +1043,7 @@ function showSettingsPopup() {
         ${toggle('flt-toggle-misc', 'Miscarriage Events', 'miscarriageEnabled')}
         ${toggle('flt-toggle-labor', 'Auto Labor (37+ weeks)', 'autoLaborEnabled')}
 
-        ${formField('Conception Threshold (%)', numberInput('threshold', s.conceptionThreshold || 20, '1', '100'))}
+        ${formField('Default Conception Threshold (%)', numberInput('threshold', s.conceptionThreshold || 20, '1', '100'))}
         ${formField('Ultrasound Error Chance (%)', numberInput('ultrasoundError', s.ultrasoundErrorChance || 5, '0', '50'))}
 
         <div style="padding:15px;background:color-mix(in srgb,#e76f51 10%,transparent);border:1px solid #e76f51;border-radius:8px;margin:${m ? '20px' : '16px'} 0;">
@@ -814,8 +1070,8 @@ function showSettingsPopup() {
     });
 
     document.getElementById('flt-clear-all').addEventListener('click', () => {
-        if (confirm('Clear ALL data?')) {
-            resetState(); saveState(); removeOldTrackerDisplay(); updateSystemPrompt(); updateMenuState();
+        if (confirm('Clear ALL tracker data for this chat?')) {
+            resetState(); saveState(); removeOldTrackerDisplay(); clearSystemPrompt(); updateMenuState();
             showToast('All data cleared', 'success');
         }
     });
@@ -858,21 +1114,21 @@ function addMenu() {
     const container = document.getElementById("leftSendForm") || document.getElementById("form_sheld") || document.querySelector("#send_form");
     if (!container) return false;
 
-    const btn = document.createElement("div");
-    btn.id = "flt-btn";
-    btn.title = "Life Tracker";
-    btn.innerHTML = `<i class="fa-solid fa-heart-pulse"></i><span id="flt-active-badge" style="display:none;position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;color:white;font-size:8px;align-items:center;justify-content:center;"></span>`;
-    btn.style.cssText = `cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--SmartThemeBodyColor);font-size:14px;margin:0 2px;border-radius:5px;opacity:0.8;position:relative;`;
+    const mainBtn = document.createElement("div");
+    mainBtn.id = "flt-btn";
+    mainBtn.title = "Life Tracker";
+    mainBtn.innerHTML = `<i class="fa-solid fa-heart-pulse"></i><span id="flt-active-badge" style="display:none;position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;color:white;font-size:8px;align-items:center;justify-content:center;"></span>`;
+    mainBtn.style.cssText = `cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;color:var(--SmartThemeBodyColor);font-size:14px;margin:0 2px;border-radius:5px;opacity:0.8;position:relative;transition:all 0.2s;`;
 
-    btn.addEventListener("mouseenter", () => { btn.style.background = "var(--SmartThemeBorderColor)"; btn.style.opacity = "1"; });
-    btn.addEventListener("mouseleave", () => { btn.style.background = ""; btn.style.opacity = "0.8"; });
+    mainBtn.addEventListener("mouseenter", () => { mainBtn.style.background = "var(--SmartThemeBorderColor)"; mainBtn.style.opacity = "1"; });
+    mainBtn.addEventListener("mouseleave", () => { mainBtn.style.background = ""; mainBtn.style.opacity = "0.8"; });
 
     const menu = document.createElement("div");
     menu.id = "flt-menu";
     menu.style.cssText = `display:none;position:absolute;bottom:calc(100% + 8px);left:0;background:var(--SmartThemeBlurTintColor);backdrop-filter:blur(10px);border:1px solid var(--SmartThemeBorderColor);border-radius:12px;padding:8px;z-index:1001;min-width:260px;box-shadow:0 4px 20px rgba(0,0,0,0.25);`;
 
     const trackersHTML = Object.values(TRACKERS).map(t => `
-        <div class="flt-menu-item" data-action="tracker" data-tracker="${t.id}" style="padding:12px;cursor:pointer;border-radius:8px;display:flex;align-items:center;gap:12px;margin:2px 0;">
+        <div class="flt-menu-item" data-action="tracker" data-tracker="${t.id}" style="padding:12px;cursor:pointer;border-radius:8px;display:flex;align-items:center;gap:12px;margin:2px 0;transition:background 0.15s;">
             <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,${t.color} 20%,transparent);border-radius:50%;color:${t.color};font-size:14px;"><i class="${t.icon}"></i></div>
             <div><div style="font-size:13px;font-weight:500;">${t.name}</div><div style="font-size:10px;opacity:0.6;">${t.description}</div></div>
         </div>
@@ -889,13 +1145,13 @@ function addMenu() {
         <div class="flt-menu-item" data-action="settings" style="padding:10px 12px;cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:10px;opacity:0.8;"><i class="fa-solid fa-sliders" style="width:20px;text-align:center;"></i><span style="font-size:12px;">Settings</span></div>
     `;
 
-    container.insertBefore(btn, container.firstChild);
+    container.insertBefore(mainBtn, container.firstChild);
     document.body.appendChild(menu);
 
-    btn.addEventListener("click", (e) => {
+    mainBtn.addEventListener("click", (e) => {
         e.preventDefault(); e.stopPropagation();
         updateMenuState();
-        const rect = btn.getBoundingClientRect();
+        const rect = mainBtn.getBoundingClientRect();
         menu.style.left = Math.max(10, rect.left) + "px";
         menu.style.bottom = (window.innerHeight - rect.top + 8) + "px";
         menu.style.display = menu.style.display === "block" ? "none" : "block";
@@ -914,7 +1170,7 @@ function addMenu() {
         item.addEventListener("mouseleave", () => item.style.background = item.dataset.action === 'status' && state.active ? "color-mix(in srgb,var(--SmartThemeAccent) 10%,transparent)" : "");
     });
 
-    document.addEventListener("click", (e) => { if (!btn.contains(e.target) && !menu.contains(e.target)) menu.style.display = "none"; });
+    document.addEventListener("click", (e) => { if (!mainBtn.contains(e.target) && !menu.contains(e.target)) menu.style.display = "none"; });
 
     return true;
 }
@@ -934,15 +1190,16 @@ jQuery(() => {
     setTimeout(() => { addMenu(); if (state.active) updateSystemPrompt(); renderAllTrackers(); updateMenuState(); }, 1000);
     setTimeout(() => { addMenu(); renderAllTrackers(); updateMenuState(); }, 3000);
 
+    // Inject CSS animations
     const style = document.createElement('style');
     style.textContent = `
         @keyframes flt-toastIn { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
         @keyframes flt-toastOut { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -20px); } }
         @keyframes flt-bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-        .flt-tracker-container { animation: flt-fadeIn 0.3s ease; }
         @keyframes flt-fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .flt-tracker-container { animation: flt-fadeIn 0.3s ease; }
     `;
     document.head.appendChild(style);
 
-    console.log("Fawn's Life Tracker: Ready!");
+    console.log("Fawn's Life Tracker v2.0: Ready! 🦌");
 });
