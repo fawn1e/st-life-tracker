@@ -24,11 +24,10 @@
 /* ===== MAIN POPUP ===== */
 #lt-popup {
     display: none;
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    margin-bottom: 8px;
-    min-width: 200px;
+    position: fixed;
+    bottom: 50px;
+    left: 10px;
+    min-width: 220px;
     background: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 8px;
