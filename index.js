@@ -54,6 +54,48 @@ let state = {
 
 let currentFormTracker = null;
 
+function getBabies() {
+    return state.data.babies || [];
+}
+
+function getCurrentBaby() {
+    const babies = getBabies();
+    const id = state.data.currentBabyId || 1;
+    return babies.find(b => b.id === id) || babies[0] || null;
+}
+
+function addBaby(babyData) {
+    if (!state.data.babies) state.data.babies = [];
+    const newId = state.data.babies.length > 0 ? Math.max(...state.data.babies.map(b => b.id)) + 1 : 1;
+    state.data.babies.push({ id: newId, ...babyData });
+    state.data.currentBabyId = newId;
+    saveState();
+    return newId;
+}
+
+function updateBaby(id, babyData) {
+    if (!state.data.babies) return;
+    const idx = state.data.babies.findIndex(b => b.id === id);
+    if (idx >= 0) {
+        state.data.babies[idx] = { ...state.data.babies[idx], ...babyData };
+        saveState();
+    }
+}
+
+function removeBaby(id) {
+    if (!state.data.babies) return;
+    state.data.babies = state.data.babies.filter(b => b.id !== id);
+    if (state.data.currentBabyId === id) {
+        state.data.currentBabyId = state.data.babies[0]?.id || null;
+    }
+    saveState();
+}
+
+function selectBaby(id) {
+    state.data.currentBabyId = id;
+    saveState();
+}
+
 function getCurrentChatId() {
     try { return getContext()?.chatId?.toString() || 'global'; }
     catch (e) { return 'global'; }
@@ -300,32 +342,45 @@ function genBirthHTML(d, baseStyle, m) {
 }
 
 function genBabyCareHTML(d, baseStyle, m) {
+    const babies = d.babies || [];
+
+    if (babies.length === 0) {
+        return `<div style="${baseStyle}padding:20px;text-align:center;opacity:0.6;">
+            <i class="fa-solid fa-baby" style="font-size:30px;margin-bottom:10px;display:block;"></i>
+            No babies registered
+        </div>`;
+    }
+
     const moodEmoji = { 'Happy': '😊', 'Content': '😌', 'Fussy': '😣', 'Crying': '😭', 'Sleeping': '😴' };
     const healthColors = { 'Healthy': '#4caf50', 'Mild Cold': '#8bc34a', 'Fever': '#e76f51', 'Teething': '#f4a261', 'Colic': '#f4a261', 'Needs Attention': '#e76f51', 'Under Treatment': '#2196f3' };
-    const healthColor = healthColors[d.health] || '#4caf50';
 
-    return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;">
-        <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#4caf50;text-transform:uppercase;"><i class="fa-solid fa-baby"></i> ${d.name || 'Baby'} <span style="font-weight:normal;opacity:0.7;text-transform:none;font-size:0.85em;">• ${d.age || 'Newborn'}</span></div>
+    return babies.map(baby => {
+        const healthColor = healthColors[baby.health] || '#4caf50';
 
-        <div style="display:grid;grid-template-columns:${m ? '1fr 1fr' : 'repeat(4, 1fr)'};gap:8px;margin-bottom:10px;">
-            <div><i class="fa-solid fa-utensils" style="opacity:0.5;"></i> ${d.hunger || '??'}</div>
-            <div><i class="fa-solid fa-soap" style="opacity:0.5;"></i> ${d.hygiene || '??'}</div>
-            <div><i class="fa-solid fa-bed" style="opacity:0.5;"></i> ${d.energy || '??'}</div>
-            <div>${moodEmoji[d.mood] || '😶'} ${d.mood || '??'}</div>
-        </div>
+        return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;margin-bottom:10px;">
+            <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#4caf50;text-transform:uppercase;"><i class="fa-solid fa-baby"></i> ${baby.name || 'Baby'} <span style="font-weight:normal;opacity:0.7;text-transform:none;font-size:0.85em;">• ${baby.age || 'Newborn'}</span></div>
 
-        ${d.health && d.health !== 'Healthy' ? `<div style="padding:6px 8px;background:color-mix(in srgb,${healthColor} 15%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;color:${healthColor};"><i class="fa-solid fa-heart-pulse"></i> ${d.health}</div>` : ''}
-        ${d.feeding ? `<div style="padding:6px 8px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-bottle-water" style="opacity:0.5;"></i> ${d.feeding}</div>` : ''}
-        ${d.sleepPattern ? `<div style="padding:6px 8px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-moon" style="opacity:0.5;"></i> ${d.sleepPattern}</div>` : ''}
-        ${d.nextCheckup || d.visitType || d.vaccinations ? `<div style="padding:8px;background:color-mix(in srgb,#2196f3 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-calendar-check" style="color:#2196f3;"></i> ${d.nextCheckup ? `Next: ${d.nextCheckup}` : ''}${d.visitType ? ` (${d.visitType})` : ''}${d.vaccinations ? `<div style="margin-top:4px;"><i class="fa-solid fa-syringe" style="opacity:0.6;"></i> ${d.vaccinations}</div>` : ''}</div>` : ''}
-        ${d.testsNeeded ? `<div style="padding:8px;background:color-mix(in srgb,#9c27b0 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-vial" style="color:#9c27b0;"></i> ${d.testsNeeded}</div>` : ''}
-        ${d.medications ? `<div style="padding:8px;background:color-mix(in srgb,#4caf50 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-pills" style="color:#4caf50;"></i> ${d.medications}</div>` : ''}
-        ${d.doctorAdvice ? `<div style="padding:8px;background:color-mix(in srgb,#ff9800 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-user-doctor" style="color:#ff9800;"></i> ${d.doctorAdvice}</div>` : ''}
-        ${d.milestone ? `<div style="padding:8px;background:color-mix(in srgb,#9b59b6 15%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-trophy" style="color:#9b59b6;"></i> <strong>Milestone:</strong> ${d.milestone}</div>` : ''}
-        ${d.developmentNotes ? `<div style="padding:8px;background:color-mix(in srgb,#00bcd4 10%,transparent);border-radius:6px;font-size:0.9em;"><i class="fa-solid fa-chart-line" style="color:#00bcd4;"></i> ${d.developmentNotes}</div>` : ''}
-    </div>`;
+            <div style="display:grid;grid-template-columns:${m ? '1fr 1fr' : 'repeat(4, 1fr)'};gap:8px;margin-bottom:10px;">
+                <div><i class="fa-solid fa-utensils" style="opacity:0.5;"></i> ${baby.hunger || '??'}</div>
+                <div><i class="fa-solid fa-soap" style="opacity:0.5;"></i> ${baby.hygiene || '??'}</div>
+                <div><i class="fa-solid fa-bed" style="opacity:0.5;"></i> ${baby.energy || '??'}</div>
+                <div>${moodEmoji[baby.mood] || '😶'} ${baby.mood || '??'}</div>
+            </div>
+
+            ${baby.health && baby.health !== 'Healthy' ? `<div style="padding:6px 8px;background:color-mix(in srgb,${healthColor} 15%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;color:${healthColor};"><i class="fa-solid fa-heart-pulse"></i> ${baby.health}</div>` : ''}
+
+            ${baby.feeding ? `<div style="padding:6px 8px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-bottle-water" style="opacity:0.5;"></i> ${baby.feeding}</div>` : ''}
+
+            ${baby.nextCheckup || baby.visitType || baby.vaccinations ? `<div style="padding:8px;background:color-mix(in srgb,#2196f3 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-calendar-check" style="color:#2196f3;"></i> ${baby.nextCheckup ? `Next: ${baby.nextCheckup}` : ''}${baby.visitType ? ` (${baby.visitType})` : ''}${baby.vaccinations ? `<div style="margin-top:4px;"><i class="fa-solid fa-syringe" style="opacity:0.6;"></i> ${baby.vaccinations}</div>` : ''}</div>` : ''}
+
+            ${baby.medications ? `<div style="padding:8px;background:color-mix(in srgb,#4caf50 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-pills" style="color:#4caf50;"></i> ${baby.medications}</div>` : ''}
+
+            ${baby.doctorAdvice ? `<div style="padding:8px;background:color-mix(in srgb,#ff9800 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-user-doctor" style="color:#ff9800;"></i> ${baby.doctorAdvice}</div>` : ''}
+
+            ${baby.milestone ? `<div style="padding:8px;background:color-mix(in srgb,#9b59b6 15%,transparent);border-radius:6px;font-size:0.9em;"><i class="fa-solid fa-trophy" style="color:#9b59b6;"></i> ${baby.milestone}</div>` : ''}
+        </div>`;
+    }).join('');
 }
-
 
 function genMiscarriageHTML(d, baseStyle, m) {
     return `<div style="${baseStyle}background:color-mix(in srgb,#6c757d 10%,transparent);border:1px solid #6c757d;border-radius:8px;padding:12px;">
@@ -518,24 +573,79 @@ function buildBirthForm(data) {
 
 function buildBabyCareForm(data) {
     const m = window.innerWidth <= 768;
-    return `
+    const babies = data.babies || [];
+    const currentId = data.currentBabyId || 1;
+    const currentBaby = babies.find(b => b.id === currentId) || {};
+
+    // Baby tabs
+    const babyTabs = babies.length > 0 ? `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;">
+            ${babies.map(b => `
+                <button type="button" class="flt-baby-tab" data-baby-id="${b.id}" style="
+                    padding:8px 16px;
+                    border-radius:20px;
+                    border:2px solid ${b.id === currentId ? '#4caf50' : 'var(--SmartThemeBorderColor)'};
+                    background:${b.id === currentId ? 'color-mix(in srgb,#4caf50 20%,transparent)' : 'transparent'};
+                    color:${b.id === currentId ? '#4caf50' : 'var(--SmartThemeBodyColor)'};
+                    cursor:pointer;
+                    font-size:${m ? '14px' : '13px'};
+                    display:flex;align-items:center;gap:6px;
+                ">
+                    <i class="fa-solid fa-baby"></i> ${b.name || `Baby ${b.id}`}
+                </button>
+            `).join('')}
+            <button type="button" id="flt-add-baby" style="
+                padding:8px 16px;
+                border-radius:20px;
+                border:2px dashed var(--SmartThemeBorderColor);
+                background:transparent;
+                color:var(--SmartThemeBodyColor);
+                cursor:pointer;
+                font-size:${m ? '14px' : '13px'};
+                opacity:0.7;
+            ">
+                <i class="fa-solid fa-plus"></i> Add Baby
+            </button>
+        </div>
+    ` : `
+        <div style="text-align:center;padding:20px;border:2px dashed var(--SmartThemeBorderColor);border-radius:10px;margin-bottom:15px;">
+            <div style="font-size:40px;margin-bottom:10px;">👶</div>
+            <div style="margin-bottom:15px;opacity:0.7;">No babies registered yet</div>
+            <button type="button" id="flt-add-baby" style="
+                padding:12px 24px;
+                border-radius:8px;
+                border:none;
+                background:#4caf50;
+                color:white;
+                cursor:pointer;
+                font-size:${m ? '15px' : '14px'};
+            ">
+                <i class="fa-solid fa-plus"></i> Add First Baby
+            </button>
+        </div>
+    `;
+
+    // Form fields for current baby
+    const babyForm = babies.length > 0 ? `
+        <input type="hidden" name="currentBabyId" value="${currentId}">
+
         <!-- Basic Info -->
         ${formGrid(2, `
-            ${formField('Baby Name', textInput('name', data.name || '', 'Required'), 'fa-solid fa-signature')}
-            ${formField('Age', textInput('age', data.age || '', 'Newborn, 2 weeks, 3 months...'), 'fa-solid fa-cake-candles')}
+            ${formField('Baby Name', textInput('babyName', currentBaby.name || '', 'Required'), 'fa-solid fa-signature')}
+            ${formField('Age', textInput('babyAge', currentBaby.age || '', 'Newborn, 2 weeks, 3 months...'), 'fa-solid fa-cake-candles')}
         `)}
 
         <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
 
         <!-- Status -->
         ${formGrid(2, `
-            ${formField('Hunger', selectInput('hunger', ['Full', 'Satisfied', 'Hungry', 'Starving'], data.hunger || 'Satisfied'), 'fa-solid fa-utensils')}
-            ${formField('Hygiene', selectInput('hygiene', ['Clean', 'Needs Change', 'Soiled'], data.hygiene || 'Clean'), 'fa-solid fa-soap')}
-            ${formField('Energy', selectInput('energy', ['Rested', 'Active', 'Tired', 'Exhausted'], data.energy || 'Rested'), 'fa-solid fa-bed')}
-            ${formField('Mood', selectInput('mood', ['Happy', 'Content', 'Fussy', 'Crying', 'Sleeping'], data.mood || 'Content'), 'fa-solid fa-face-smile')}
+            ${formField('Hunger', selectInput('babyHunger', ['Full', 'Satisfied', 'Hungry', 'Starving'], currentBaby.hunger || 'Satisfied'), 'fa-solid fa-utensils')}
+            ${formField('Hygiene', selectInput('babyHygiene', ['Clean', 'Needs Change', 'Soiled'], currentBaby.hygiene || 'Clean'), 'fa-solid fa-soap')}
+            ${formField('Energy', selectInput('babyEnergy', ['Rested', 'Active', 'Tired', 'Exhausted'], currentBaby.energy || 'Rested'), 'fa-solid fa-bed')}
+            ${formField('Mood', selectInput('babyMood', ['Happy', 'Content', 'Fussy', 'Crying', 'Sleeping'], currentBaby.mood || 'Content'), 'fa-solid fa-face-smile')}
         `)}
 
-        ${formField('Health Status', selectInput('health', ['Healthy', 'Mild Cold', 'Fever', 'Teething', 'Colic', 'Needs Attention', 'Under Treatment'], data.health || 'Healthy'), 'fa-solid fa-heart-pulse')}
+        ${formField('Health Status', selectInput('babyHealth', ['Healthy', 'Mild Cold', 'Fever', 'Teething', 'Colic', 'Needs Attention', 'Under Treatment'], currentBaby.health || 'Healthy'), 'fa-solid fa-heart-pulse')}
 
         <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
 
@@ -543,8 +653,8 @@ function buildBabyCareForm(data) {
         <div style="font-size:${m ? '14px' : '13px'};font-weight:bold;margin-bottom:12px;color:var(--SmartThemeAccent);"><i class="fa-solid fa-stethoscope"></i> Medical</div>
 
         ${formGrid(2, `
-            ${formField('Next Checkup', textInput('nextCheckup', data.nextCheckup || '', 'e.g., 2 month visit, next week...'), 'fa-solid fa-calendar-check')}
-            ${formField('Visit Type', selectInput('visitType', [
+            ${formField('Next Checkup', textInput('babyNextCheckup', currentBaby.nextCheckup || '', 'e.g., 2 month visit...'), 'fa-solid fa-calendar-check')}
+            ${formField('Visit Type', selectInput('babyVisitType', [
                 {value: '', label: 'Select...'},
                 'Regular Checkup',
                 'Vaccination',
@@ -553,38 +663,54 @@ function buildBabyCareForm(data) {
                 'Development Assessment',
                 'Emergency',
                 'Follow-up'
-            ], data.visitType || ''), 'fa-solid fa-clipboard-list')}
+            ], currentBaby.visitType || ''), 'fa-solid fa-clipboard-list')}
         `)}
 
-        ${formField('Vaccinations Due/Given', textInput('vaccinations', data.vaccinations || '', 'e.g., 2-month shots, Hepatitis B...'), 'fa-solid fa-syringe')}
-
-        ${formField('Tests/Screenings', textInput('testsNeeded', data.testsNeeded || '', 'e.g., Hearing test, blood work...'), 'fa-solid fa-vial')}
-
-        ${formField('Medications', textInput('medications', data.medications || '', 'e.g., Vitamin D drops, gas drops...'), 'fa-solid fa-pills')}
-
-        ${formField("Doctor's Advice", textareaInput('doctorAdvice', data.doctorAdvice || '', 'Feeding tips, sleep advice, concerns...', 2), 'fa-solid fa-user-doctor')}
+        ${formField('Vaccinations', textInput('babyVaccinations', currentBaby.vaccinations || '', 'e.g., 2-month shots...'), 'fa-solid fa-syringe')}
+        ${formField('Tests/Screenings', textInput('babyTests', currentBaby.testsNeeded || '', 'e.g., Hearing test...'), 'fa-solid fa-vial')}
+        ${formField('Medications', textInput('babyMedications', currentBaby.medications || '', 'e.g., Vitamin D drops...'), 'fa-solid fa-pills')}
+        ${formField("Doctor's Advice", textareaInput('babyDoctorAdvice', currentBaby.doctorAdvice || '', 'Feeding tips, sleep advice...', 2), 'fa-solid fa-user-doctor')}
 
         <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
 
         <!-- Development -->
         <div style="font-size:${m ? '14px' : '13px'};font-weight:bold;margin-bottom:12px;color:#9b59b6;"><i class="fa-solid fa-star"></i> Development</div>
 
-        ${formField('Latest Milestone', textInput('milestone', data.milestone || '', 'e.g., First smile, rolled over, first word...'), 'fa-solid fa-trophy')}
+        ${formField('Latest Milestone', textInput('babyMilestone', currentBaby.milestone || '', 'e.g., First smile, rolled over...'), 'fa-solid fa-trophy')}
+        ${formField('Development Notes', textareaInput('babyDevelopmentNotes', currentBaby.developmentNotes || '', 'Weight gain, growth, new skills...', 2), 'fa-solid fa-chart-line')}
 
-        ${formField('Development Notes', textareaInput('developmentNotes', data.developmentNotes || '', 'Weight gain, growth, new skills...', 2), 'fa-solid fa-chart-line')}
+        ${formGrid(2, `
+            ${formField('Feeding', selectInput('babyFeeding', [
+                {value: '', label: 'Select...'},
+                'Breastfeeding only',
+                'Formula only',
+                'Mixed feeding',
+                'Starting solids',
+                'Mostly solids',
+                'Weaned'
+            ], currentBaby.feeding || ''), 'fa-solid fa-bottle-water')}
+            ${formField('Sleep Pattern', textInput('babySleepPattern', currentBaby.sleepPattern || '', 'e.g., 3 naps/day...'), 'fa-solid fa-moon')}
+        `)}
 
-        ${formField('Feeding', selectInput('feeding', [
-            {value: '', label: 'Select...'},
-            'Breastfeeding only',
-            'Formula only',
-            'Mixed feeding',
-            'Starting solids',
-            'Mostly solids',
-            'Weaned'
-        ], data.feeding || ''), 'fa-solid fa-bottle-water')}
+        <!-- Delete button -->
+        ${babies.length > 1 ? `
+            <div style="margin-top:20px;padding-top:15px;border-top:1px dashed #e76f51;">
+                <button type="button" id="flt-remove-baby" data-baby-id="${currentId}" style="
+                    background:transparent;
+                    color:#e76f51;
+                    border:1px solid #e76f51;
+                    padding:8px 16px;
+                    border-radius:6px;
+                    cursor:pointer;
+                    font-size:12px;
+                ">
+                    <i class="fa-solid fa-trash"></i> Remove ${currentBaby.name || 'this baby'}
+                </button>
+            </div>
+        ` : ''}
+    ` : '';
 
-        ${formField('Sleep Pattern', textInput('sleepPattern', data.sleepPattern || '', 'e.g., 3 naps/day, sleeping through night...'), 'fa-solid fa-moon')}
-    `;
+    return babyTabs + babyForm;
 }
 
 
@@ -604,6 +730,7 @@ function setupTrackerHandlers(trackerId, data) {
     if (trackerId === 'pregnancy') setupPregnancyHandlers(data);
     if (trackerId === 'birth') setupBirthHandlers(data);
     if (trackerId === 'miscarriage') setupMiscarriageHandlers(data);
+    if (trackerId === 'babyCare') setupBabyCareHandlers(data);  // ← ДОБАВЬ ЭТУ СТРОКУ
 }
 
 function setupDateModeHandlers() {
@@ -697,10 +824,92 @@ function setupMiscarriageHandlers(data) {
     });
 }
 
+function setupBabyCareHandlers(data) {
+    // Baby tab switching
+    document.querySelectorAll('.flt-baby-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            const babyId = parseInt(this.dataset.babyId);
+            selectBaby(babyId);
+            closePopup();
+            showTrackerForm('babyCare');
+        });
+    });
+
+    // Add baby button
+    document.getElementById('flt-add-baby')?.addEventListener('click', () => {
+        const name = prompt('Baby name:');
+        if (name && name.trim()) {
+            addBaby({
+                name: name.trim(),
+                age: 'Newborn',
+                hunger: 'Satisfied',
+                hygiene: 'Clean',
+                energy: 'Rested',
+                mood: 'Content',
+                health: 'Healthy'
+            });
+            closePopup();
+            showTrackerForm('babyCare');
+        }
+    });
+
+    // Remove baby button
+    document.getElementById('flt-remove-baby')?.addEventListener('click', function() {
+        const babyId = parseInt(this.dataset.babyId);
+        const baby = getBabies().find(b => b.id === babyId);
+        if (confirm(`Remove ${baby?.name || 'this baby'}?`)) {
+            removeBaby(babyId);
+            closePopup();
+            showTrackerForm('babyCare');
+        }
+    });
+
+    // Update preview on input
+    document.querySelectorAll('#flt-form input, #flt-form select, #flt-form textarea').forEach(el => {
+        el.addEventListener('input', () => updatePreview('babyCare'));
+        el.addEventListener('change', () => updatePreview('babyCare'));
+    });
+}
+
 function getFormData() {
     const form = document.getElementById('flt-form');
     const data = {};
     new FormData(form).forEach((value, key) => { if (value && value.trim()) data[key] = value.trim(); });
+
+    // Handle babyCare multi-baby
+    if (currentFormTracker === 'babyCare' && state.data.babies) {
+        const currentId = parseInt(data.currentBabyId) || state.data.currentBabyId;
+        const babyData = {
+            name: data.babyName,
+            age: data.babyAge,
+            hunger: data.babyHunger,
+            hygiene: data.babyHygiene,
+            energy: data.babyEnergy,
+            mood: data.babyMood,
+            health: data.babyHealth,
+            nextCheckup: data.babyNextCheckup,
+            visitType: data.babyVisitType,
+            vaccinations: data.babyVaccinations,
+            testsNeeded: data.babyTests,
+            medications: data.babyMedications,
+            doctorAdvice: data.babyDoctorAdvice,
+            milestone: data.babyMilestone,
+            developmentNotes: data.babyDevelopmentNotes,
+            feeding: data.babyFeeding,
+            sleepPattern: data.babySleepPattern
+        };
+
+        // Update existing baby
+        const babies = [...(state.data.babies || [])];
+        const idx = babies.findIndex(b => b.id === currentId);
+        if (idx >= 0) {
+            babies[idx] = { ...babies[idx], ...babyData };
+        }
+
+        data.babies = babies;
+        data.currentBabyId = currentId;
+    }
+
     if (data.dateMode === 'system' && data.week) data.dueDate = formatDate(calculateDueDate(new Date(), parseInt(data.week)));
     return data;
 }
