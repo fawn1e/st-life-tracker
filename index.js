@@ -301,17 +301,31 @@ function genBirthHTML(d, baseStyle, m) {
 
 function genBabyCareHTML(d, baseStyle, m) {
     const moodEmoji = { 'Happy': '😊', 'Content': '😌', 'Fussy': '😣', 'Crying': '😭', 'Sleeping': '😴' };
+    const healthColors = { 'Healthy': '#4caf50', 'Mild Cold': '#8bc34a', 'Fever': '#e76f51', 'Teething': '#f4a261', 'Colic': '#f4a261', 'Needs Attention': '#e76f51', 'Under Treatment': '#2196f3' };
+    const healthColor = healthColors[d.health] || '#4caf50';
+
     return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;">
         <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#4caf50;text-transform:uppercase;"><i class="fa-solid fa-baby"></i> ${d.name || 'Baby'} <span style="font-weight:normal;opacity:0.7;text-transform:none;font-size:0.85em;">• ${d.age || 'Newborn'}</span></div>
+
         <div style="display:grid;grid-template-columns:${m ? '1fr 1fr' : 'repeat(4, 1fr)'};gap:8px;margin-bottom:10px;">
             <div><i class="fa-solid fa-utensils" style="opacity:0.5;"></i> ${d.hunger || '??'}</div>
             <div><i class="fa-solid fa-soap" style="opacity:0.5;"></i> ${d.hygiene || '??'}</div>
             <div><i class="fa-solid fa-bed" style="opacity:0.5;"></i> ${d.energy || '??'}</div>
             <div>${moodEmoji[d.mood] || '😶'} ${d.mood || '??'}</div>
         </div>
-        ${d.milestone ? `<div style="padding:8px;background:color-mix(in srgb,#9b59b6 15%,transparent);border-radius:6px;font-size:0.9em;"><i class="fa-solid fa-star" style="color:#9b59b6;"></i> ${d.milestone}</div>` : ''}
+
+        ${d.health && d.health !== 'Healthy' ? `<div style="padding:6px 8px;background:color-mix(in srgb,${healthColor} 15%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;color:${healthColor};"><i class="fa-solid fa-heart-pulse"></i> ${d.health}</div>` : ''}
+        ${d.feeding ? `<div style="padding:6px 8px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-bottle-water" style="opacity:0.5;"></i> ${d.feeding}</div>` : ''}
+        ${d.sleepPattern ? `<div style="padding:6px 8px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-moon" style="opacity:0.5;"></i> ${d.sleepPattern}</div>` : ''}
+        ${d.nextCheckup || d.visitType || d.vaccinations ? `<div style="padding:8px;background:color-mix(in srgb,#2196f3 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-calendar-check" style="color:#2196f3;"></i> ${d.nextCheckup ? `Next: ${d.nextCheckup}` : ''}${d.visitType ? ` (${d.visitType})` : ''}${d.vaccinations ? `<div style="margin-top:4px;"><i class="fa-solid fa-syringe" style="opacity:0.6;"></i> ${d.vaccinations}</div>` : ''}</div>` : ''}
+        ${d.testsNeeded ? `<div style="padding:8px;background:color-mix(in srgb,#9c27b0 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-vial" style="color:#9c27b0;"></i> ${d.testsNeeded}</div>` : ''}
+        ${d.medications ? `<div style="padding:8px;background:color-mix(in srgb,#4caf50 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-pills" style="color:#4caf50;"></i> ${d.medications}</div>` : ''}
+        ${d.doctorAdvice ? `<div style="padding:8px;background:color-mix(in srgb,#ff9800 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-user-doctor" style="color:#ff9800;"></i> ${d.doctorAdvice}</div>` : ''}
+        ${d.milestone ? `<div style="padding:8px;background:color-mix(in srgb,#9b59b6 15%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-trophy" style="color:#9b59b6;"></i> <strong>Milestone:</strong> ${d.milestone}</div>` : ''}
+        ${d.developmentNotes ? `<div style="padding:8px;background:color-mix(in srgb,#00bcd4 10%,transparent);border-radius:6px;font-size:0.9em;"><i class="fa-solid fa-chart-line" style="color:#00bcd4;"></i> ${d.developmentNotes}</div>` : ''}
     </div>`;
 }
+
 
 function genMiscarriageHTML(d, baseStyle, m) {
     return `<div style="${baseStyle}background:color-mix(in srgb,#6c757d 10%,transparent);border:1px solid #6c757d;border-radius:8px;padding:12px;">
@@ -503,15 +517,76 @@ function buildBirthForm(data) {
 }
 
 function buildBabyCareForm(data) {
-    return formGrid(2, `
-        ${formField('Baby Name', textInput('name', data.name || '', 'Required'), 'fa-solid fa-signature')}
-        ${formField('Age', textInput('age', data.age || '', 'Newborn, 2 weeks...'), 'fa-solid fa-cake-candles')}
-        ${formField('Hunger', selectInput('hunger', ['Full', 'Satisfied', 'Hungry', 'Starving'], data.hunger || 'Satisfied'), 'fa-solid fa-utensils')}
-        ${formField('Hygiene', selectInput('hygiene', ['Clean', 'Needs Change', 'Soiled'], data.hygiene || 'Clean'), 'fa-solid fa-soap')}
-        ${formField('Energy', selectInput('energy', ['Rested', 'Active', 'Tired', 'Exhausted'], data.energy || 'Rested'), 'fa-solid fa-bed')}
-        ${formField('Mood', selectInput('mood', ['Happy', 'Content', 'Fussy', 'Crying', 'Sleeping'], data.mood || 'Content'), 'fa-solid fa-face-smile')}
-    `);
+    const m = window.innerWidth <= 768;
+    return `
+        <!-- Basic Info -->
+        ${formGrid(2, `
+            ${formField('Baby Name', textInput('name', data.name || '', 'Required'), 'fa-solid fa-signature')}
+            ${formField('Age', textInput('age', data.age || '', 'Newborn, 2 weeks, 3 months...'), 'fa-solid fa-cake-candles')}
+        `)}
+
+        <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
+
+        <!-- Status -->
+        ${formGrid(2, `
+            ${formField('Hunger', selectInput('hunger', ['Full', 'Satisfied', 'Hungry', 'Starving'], data.hunger || 'Satisfied'), 'fa-solid fa-utensils')}
+            ${formField('Hygiene', selectInput('hygiene', ['Clean', 'Needs Change', 'Soiled'], data.hygiene || 'Clean'), 'fa-solid fa-soap')}
+            ${formField('Energy', selectInput('energy', ['Rested', 'Active', 'Tired', 'Exhausted'], data.energy || 'Rested'), 'fa-solid fa-bed')}
+            ${formField('Mood', selectInput('mood', ['Happy', 'Content', 'Fussy', 'Crying', 'Sleeping'], data.mood || 'Content'), 'fa-solid fa-face-smile')}
+        `)}
+
+        ${formField('Health Status', selectInput('health', ['Healthy', 'Mild Cold', 'Fever', 'Teething', 'Colic', 'Needs Attention', 'Under Treatment'], data.health || 'Healthy'), 'fa-solid fa-heart-pulse')}
+
+        <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
+
+        <!-- Medical -->
+        <div style="font-size:${m ? '14px' : '13px'};font-weight:bold;margin-bottom:12px;color:var(--SmartThemeAccent);"><i class="fa-solid fa-stethoscope"></i> Medical</div>
+
+        ${formGrid(2, `
+            ${formField('Next Checkup', textInput('nextCheckup', data.nextCheckup || '', 'e.g., 2 month visit, next week...'), 'fa-solid fa-calendar-check')}
+            ${formField('Visit Type', selectInput('visitType', [
+                {value: '', label: 'Select...'},
+                'Regular Checkup',
+                'Vaccination',
+                'Sick Visit',
+                'Weight Check',
+                'Development Assessment',
+                'Emergency',
+                'Follow-up'
+            ], data.visitType || ''), 'fa-solid fa-clipboard-list')}
+        `)}
+
+        ${formField('Vaccinations Due/Given', textInput('vaccinations', data.vaccinations || '', 'e.g., 2-month shots, Hepatitis B...'), 'fa-solid fa-syringe')}
+
+        ${formField('Tests/Screenings', textInput('testsNeeded', data.testsNeeded || '', 'e.g., Hearing test, blood work...'), 'fa-solid fa-vial')}
+
+        ${formField('Medications', textInput('medications', data.medications || '', 'e.g., Vitamin D drops, gas drops...'), 'fa-solid fa-pills')}
+
+        ${formField("Doctor's Advice", textareaInput('doctorAdvice', data.doctorAdvice || '', 'Feeding tips, sleep advice, concerns...', 2), 'fa-solid fa-user-doctor')}
+
+        <hr style="border:none;border-top:1px dashed var(--SmartThemeBorderColor);margin:20px 0;">
+
+        <!-- Development -->
+        <div style="font-size:${m ? '14px' : '13px'};font-weight:bold;margin-bottom:12px;color:#9b59b6;"><i class="fa-solid fa-star"></i> Development</div>
+
+        ${formField('Latest Milestone', textInput('milestone', data.milestone || '', 'e.g., First smile, rolled over, first word...'), 'fa-solid fa-trophy')}
+
+        ${formField('Development Notes', textareaInput('developmentNotes', data.developmentNotes || '', 'Weight gain, growth, new skills...', 2), 'fa-solid fa-chart-line')}
+
+        ${formField('Feeding', selectInput('feeding', [
+            {value: '', label: 'Select...'},
+            'Breastfeeding only',
+            'Formula only',
+            'Mixed feeding',
+            'Starting solids',
+            'Mostly solids',
+            'Weaned'
+        ], data.feeding || ''), 'fa-solid fa-bottle-water')}
+
+        ${formField('Sleep Pattern', textInput('sleepPattern', data.sleepPattern || '', 'e.g., 3 naps/day, sleeping through night...'), 'fa-solid fa-moon')}
+    `;
 }
+
 
 function buildMiscarriageForm(data) {
     const m = window.innerWidth <= 768;
