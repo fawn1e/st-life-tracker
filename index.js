@@ -1,202 +1,27 @@
 // ═══════════════════════════════════════════════════════════════
-//  LIFE TRACKER v2.0
-//  Conception | Pregnancy | Birth | Baby Care
+//  LIFE TRACKER v2.1 - Popup Over Button
 // ═══════════════════════════════════════════════════════════════
 
 import { getContext, extension_settings } from "../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../script.js";
-import { eventSource, event_types } from "../../../../script.js";
 
 const extensionName = "life-tracker";
-
-// ═══════════════════════════════════════════════════════════════
-//  LOCALIZATION
-// ═══════════════════════════════════════════════════════════════
-
-const LANG = {
-    en: {
-        title: "Life Tracker",
-        conception: "Conception",
-        pregnancy: "Pregnancy",
-        birth: "Birth",
-        babyCare: "Baby",
-        insert: "Insert",
-        cancel: "Cancel",
-        save: "Save",
-        rollInsert: "Roll & Insert",
-        baseChance: "Base Chance (%)",
-        storyDate: "Story Date",
-        manualRoll: "Manual Roll",
-        manualRollHint: "Empty = auto",
-        week: "Week",
-        dueDate: "Due Date",
-        knowledge: "Knowledge",
-        hidden: "Hidden",
-        disclosed: "Disclosed",
-        gender: "Gender",
-        unknown: "Unknown",
-        boy: "Boy",
-        girl: "Girl",
-        twins: "Twins",
-        symptoms: "Symptoms",
-        symptomsHint: "Fatigue, Nausea...",
-        nextVisit: "Next Visit",
-        risks: "Risks",
-        stable: "Stable",
-        usAccuracy: "Ultrasound",
-        confirmed: "Confirmed",
-        missed: "Missed",
-        weight: "Weight (kg)",
-        height: "Height (cm)",
-        dominance: "Dominance",
-        features: "Features",
-        featuresHint: "Mother's eyes...",
-        temperament: "Temperament",
-        temperamentHint: "Calm, Curious...",
-        health: "Health",
-        excellent: "Excellent",
-        underObs: "Under Observation",
-        critical: "Critical",
-        pathology: "Pathology",
-        noneDetected: "None Detected",
-        babyName: "Name",
-        age: "Age",
-        hunger: "Hunger",
-        full: "Full",
-        satisfied: "Satisfied",
-        hungry: "Hungry",
-        starving: "Starving",
-        hygiene: "Hygiene",
-        clean: "Clean",
-        needsChange: "Needs Change",
-        soiled: "Soiled",
-        energy: "Energy",
-        rested: "Rested",
-        awake: "Awake",
-        tired: "Tired",
-        exhausted: "Exhausted",
-        mood: "Mood",
-        content: "Content",
-        happy: "Happy",
-        fussy: "Fussy",
-        crying: "Crying",
-        traits: "Traits",
-        milestone: "Next Milestone",
-        medical: "Medical",
-        immediateNeed: "Immediate Need",
-        saved: "Saved",
-        infoConception: "Roll for conception chance. Base 20-30% or set custom.",
-        infoPregnancy: "Track pregnancy. Week auto-calculates baby size.",
-        infoBirth: "Generate birth report with genetics.",
-        infoBaby: "Track baby needs and development."
-    },
-    ru: {
-        title: "Трекер Жизни",
-        conception: "Зачатие",
-        pregnancy: "Беременность",
-        birth: "Роды",
-        babyCare: "Малыш",
-        insert: "Вставить",
-        cancel: "Отмена",
-        save: "Сохранить",
-        rollInsert: "Бросить",
-        baseChance: "Шанс (%)",
-        storyDate: "Дата",
-        manualRoll: "Вручную",
-        manualRollHint: "Пусто = авто",
-        week: "Неделя",
-        dueDate: "Дата родов",
-        knowledge: "Известность",
-        hidden: "Скрыто",
-        disclosed: "Известно",
-        gender: "Пол",
-        unknown: "Неизвестно",
-        boy: "Мальчик",
-        girl: "Девочка",
-        twins: "Двойня",
-        symptoms: "Симптомы",
-        symptomsHint: "Усталость, тошнота...",
-        nextVisit: "Визит",
-        risks: "Риски",
-        stable: "Стабильно",
-        usAccuracy: "УЗИ",
-        confirmed: "Верно",
-        missed: "Ошибка",
-        weight: "Вес (кг)",
-        height: "Рост (см)",
-        dominance: "Доминанта",
-        features: "Черты",
-        featuresHint: "Глаза мамы...",
-        temperament: "Темперамент",
-        temperamentHint: "Спокойный...",
-        health: "Здоровье",
-        excellent: "Отлично",
-        underObs: "Наблюдение",
-        critical: "Критично",
-        pathology: "Патологии",
-        noneDetected: "Нет",
-        babyName: "Имя",
-        age: "Возраст",
-        hunger: "Голод",
-        full: "Сыт",
-        satisfied: "Доволен",
-        hungry: "Голоден",
-        starving: "Очень голоден",
-        hygiene: "Гигиена",
-        clean: "Чисто",
-        needsChange: "Сменить",
-        soiled: "Грязно",
-        energy: "Энергия",
-        rested: "Отдохнул",
-        awake: "Бодр",
-        tired: "Устал",
-        exhausted: "Измотан",
-        mood: "Настроение",
-        content: "Доволен",
-        happy: "Счастлив",
-        fussy: "Капризный",
-        crying: "Плачет",
-        traits: "Черты",
-        milestone: "Веха",
-        medical: "Медицина",
-        immediateNeed: "Потребность",
-        saved: "Сохранено",
-        infoConception: "Бросок на зачатие. База 20-30% или своя.",
-        infoPregnancy: "Трекер беременности. Размер по неделе.",
-        infoBirth: "Отчёт о рождении с генетикой.",
-        infoBaby: "Потребности и развитие малыша."
-    }
-};
 
 // ═══════════════════════════════════════════════════════════════
 //  BABY SIZE
 // ═══════════════════════════════════════════════════════════════
 
 const BABY_SIZES = {
-    en: {
-        4: "Poppy seed", 5: "Sesame seed", 6: "Lentil", 7: "Blueberry",
-        8: "Raspberry", 9: "Cherry", 10: "Strawberry", 11: "Lime",
-        12: "Plum", 13: "Lemon", 14: "Nectarine", 15: "Orange",
-        16: "Avocado", 17: "Pear", 18: "Bell pepper", 19: "Mango",
-        20: "Banana", 21: "Pomegranate", 22: "Papaya", 23: "Grapefruit",
-        24: "Cantaloupe", 25: "Cauliflower", 26: "Lettuce", 27: "Cabbage",
-        28: "Eggplant", 29: "Squash", 30: "Coconut", 31: "Pineapple",
-        32: "Jicama", 33: "Honeydew", 34: "Cantaloupe", 35: "Coconut",
-        36: "Honeydew", 37: "Winter melon", 38: "Pumpkin", 39: "Watermelon",
-        40: "Pumpkin"
-    },
-    ru: {
-        4: "Мак", 5: "Кунжут", 6: "Чечевица", 7: "Черника",
-        8: "Малина", 9: "Вишня", 10: "Клубника", 11: "Лайм",
-        12: "Слива", 13: "Лимон", 14: "Нектарин", 15: "Апельсин",
-        16: "Авокадо", 17: "Груша", 18: "Перец", 19: "Манго",
-        20: "Банан", 21: "Гранат", 22: "Папайя", 23: "Грейпфрут",
-        24: "Дыня", 25: "Капуста", 26: "Салат", 27: "Кочан",
-        28: "Баклажан", 29: "Кабачок", 30: "Кокос", 31: "Ананас",
-        32: "Хикама", 33: "Дыня", 34: "Канталупа", 35: "Кокос",
-        36: "Дыня", 37: "Тыква", 38: "Тыква", 39: "Арбуз",
-        40: "Тыква"
-    }
+    4: "Poppy seed", 5: "Sesame seed", 6: "Lentil", 7: "Blueberry",
+    8: "Raspberry", 9: "Cherry", 10: "Strawberry", 11: "Lime",
+    12: "Plum", 13: "Lemon", 14: "Nectarine", 15: "Orange",
+    16: "Avocado", 17: "Pear", 18: "Bell pepper", 19: "Mango",
+    20: "Banana", 21: "Pomegranate", 22: "Papaya", 23: "Grapefruit",
+    24: "Cantaloupe", 25: "Cauliflower", 26: "Lettuce", 27: "Cabbage",
+    28: "Eggplant", 29: "Squash", 30: "Coconut", 31: "Pineapple",
+    32: "Jicama", 33: "Honeydew", 34: "Cantaloupe", 35: "Coconut",
+    36: "Honeydew", 37: "Winter melon", 38: "Pumpkin", 39: "Watermelon",
+    40: "Pumpkin"
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -277,22 +102,229 @@ const TEMPLATES = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-//  HELPERS
+//  SETTINGS FORMS
 // ═══════════════════════════════════════════════════════════════
 
-function getLang() {
-    const stLang = localStorage.getItem('language') || 'en';
-    return LANG[stLang] ? stLang : 'en';
-}
+const SETTINGS_HTML = {
+    conception: () => `
+        <div class="lt-settings-header">
+            <span class="lt-settings-title"><i class="fa-solid fa-dice"></i> Conception Roll</span>
+            <button class="lt-back-btn" id="lt-back"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Base Chance (%)</label>
+                <input type="number" id="lt-c-chance" value="25" min="1" max="100">
+            </div>
+            <div class="lt-field">
+                <label>Manual Roll</label>
+                <input type="number" id="lt-c-manual" placeholder="Auto" min="1" max="100">
+            </div>
+        </div>
+        <div class="lt-field">
+            <label>Story Date</label>
+            <input type="date" id="lt-c-date" value="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="lt-actions">
+            <button class="lt-btn lt-btn-secondary" id="lt-cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
+            <button class="lt-btn lt-btn-primary" id="lt-c-roll"><i class="fa-solid fa-dice"></i> Roll</button>
+        </div>`,
 
-function t(key) {
-    return LANG[getLang()][key] || LANG.en[key] || key;
-}
+    pregnancy: (saved) => `
+        <div class="lt-settings-header">
+            <span class="lt-settings-title"><i class="fa-solid fa-person-pregnant"></i> Pregnancy</span>
+            <button class="lt-back-btn" id="lt-back"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Week</label>
+                <input type="number" id="lt-p-week" value="${saved?.week || 8}" min="1" max="42">
+            </div>
+            <div class="lt-field">
+                <label>Due Date</label>
+                <input type="date" id="lt-p-due" value="${saved?.rawDue || ''}">
+            </div>
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Knowledge</label>
+                <select id="lt-p-disclosed">
+                    <option value="false">Hidden</option>
+                    <option value="true" ${saved?.disclosed ? 'selected' : ''}>Disclosed</option>
+                </select>
+            </div>
+            <div class="lt-field">
+                <label>Gender</label>
+                <select id="lt-p-gender">
+                    <option value="Unknown">Unknown</option>
+                    <option value="Boy">Boy</option>
+                    <option value="Girl">Girl</option>
+                    <option value="Twins">Twins</option>
+                </select>
+            </div>
+        </div>
+        <div class="lt-field">
+            <label>Symptoms</label>
+            <input type="text" id="lt-p-symptoms" placeholder="Fatigue, Nausea..." value="${saved?.symptoms || ''}">
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Next Visit</label>
+                <input type="text" id="lt-p-visit" value="${saved?.nextVisit || ''}">
+            </div>
+            <div class="lt-field">
+                <label>Risks</label>
+                <input type="text" id="lt-p-risks" placeholder="Stable" value="${saved?.risks || ''}">
+            </div>
+        </div>
+        <div class="lt-actions">
+            <button class="lt-btn lt-btn-secondary" id="lt-cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
+            <button class="lt-btn lt-btn-primary" id="lt-p-insert"><i class="fa-solid fa-paste"></i> Insert</button>
+        </div>`,
 
-function getBabySize(week) {
-    const lang = getLang();
-    return BABY_SIZES[lang][week] || BABY_SIZES.en[week] || "Baby";
-}
+    birth: (saved) => `
+        <div class="lt-settings-header">
+            <span class="lt-settings-title"><i class="fa-solid fa-baby-carriage"></i> Birth Report</span>
+            <button class="lt-back-btn" id="lt-back"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Gender</label>
+                <select id="lt-b-gender">
+                    <option value="Girl">Girl</option>
+                    <option value="Boy">Boy</option>
+                    <option value="Twins">Twins</option>
+                </select>
+            </div>
+            <div class="lt-field">
+                <label>Ultrasound</label>
+                <select id="lt-b-accuracy">
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Missed">Missed</option>
+                </select>
+            </div>
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Weight (kg)</label>
+                <input type="number" id="lt-b-weight" value="3.2" step="0.1" min="1" max="6">
+            </div>
+            <div class="lt-field">
+                <label>Height (cm)</label>
+                <input type="number" id="lt-b-height" value="50" min="30" max="60">
+            </div>
+        </div>
+        <div class="lt-field">
+            <label>Dominance</label>
+            <input type="text" id="lt-b-dominance" placeholder="Mother (60%)">
+        </div>
+        <div class="lt-field">
+            <label>Features</label>
+            <input type="text" id="lt-b-features" placeholder="Mother's eyes...">
+        </div>
+        <div class="lt-field">
+            <label>Temperament</label>
+            <input type="text" id="lt-b-temperament" placeholder="Calm, Curious...">
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Health</label>
+                <select id="lt-b-health">
+                    <option value="Excellent">Excellent</option>
+                    <option value="Stable">Stable</option>
+                    <option value="Under Observation">Under Obs</option>
+                    <option value="Critical">Critical</option>
+                </select>
+            </div>
+            <div class="lt-field">
+                <label>Pathology</label>
+                <input type="text" id="lt-b-pathology" placeholder="None">
+            </div>
+        </div>
+        <div class="lt-actions">
+            <button class="lt-btn lt-btn-secondary" id="lt-cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
+            <button class="lt-btn lt-btn-primary" id="lt-b-insert"><i class="fa-solid fa-paste"></i> Insert</button>
+        </div>`,
+
+    babyCare: (saved) => `
+        <div class="lt-settings-header">
+            <span class="lt-settings-title"><i class="fa-solid fa-baby"></i> Baby Care</span>
+            <button class="lt-back-btn" id="lt-back"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Name</label>
+                <input type="text" id="lt-bc-name" value="${saved?.name || ''}">
+            </div>
+            <div class="lt-field">
+                <label>Age</label>
+                <input type="text" id="lt-bc-age" placeholder="2 weeks" value="${saved?.age || ''}">
+            </div>
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Hunger</label>
+                <select id="lt-bc-hunger">
+                    <option value="Full">Full</option>
+                    <option value="Satisfied">Satisfied</option>
+                    <option value="Hungry">Hungry</option>
+                    <option value="Starving">Starving</option>
+                </select>
+            </div>
+            <div class="lt-field">
+                <label>Hygiene</label>
+                <select id="lt-bc-hygiene">
+                    <option value="Clean">Clean</option>
+                    <option value="Needs Change">Needs Change</option>
+                    <option value="Soiled">Soiled</option>
+                </select>
+            </div>
+        </div>
+        <div class="lt-row">
+            <div class="lt-field">
+                <label>Energy</label>
+                <select id="lt-bc-energy">
+                    <option value="Rested">Rested</option>
+                    <option value="Awake">Awake</option>
+                    <option value="Tired">Tired</option>
+                    <option value="Exhausted">Exhausted</option>
+                </select>
+            </div>
+            <div class="lt-field">
+                <label>Mood</label>
+                <select id="lt-bc-mood">
+                    <option value="Content">Content</option>
+                    <option value="Happy">Happy</option>
+                    <option value="Fussy">Fussy</option>
+                    <option value="Crying">Crying</option>
+                </select>
+            </div>
+        </div>
+        <div class="lt-field">
+            <label>Traits</label>
+            <input type="text" id="lt-bc-traits" value="${saved?.traits || ''}">
+        </div>
+        <div class="lt-field">
+            <label>Next Milestone</label>
+            <input type="text" id="lt-bc-milestone" value="${saved?.milestone || ''}">
+        </div>
+        <div class="lt-field">
+            <label>Medical</label>
+            <input type="text" id="lt-bc-medical" value="${saved?.medical || ''}">
+        </div>
+        <div class="lt-field">
+            <label>Immediate Need</label>
+            <input type="text" id="lt-bc-need" value="${saved?.immediateNeed || ''}">
+        </div>
+        <div class="lt-actions">
+            <button class="lt-btn lt-btn-secondary" id="lt-cancel"><i class="fa-solid fa-xmark"></i> Cancel</button>
+            <button class="lt-btn lt-btn-primary" id="lt-bc-insert"><i class="fa-solid fa-paste"></i> Insert</button>
+        </div>`
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════
 
 function getCurrentChatId() {
     const context = getContext();
@@ -346,398 +378,119 @@ function insertToTextarea(text) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  PANEL HTML
+//  UI FUNCTIONS
 // ═══════════════════════════════════════════════════════════════
 
-function getPanelHTML() {
-    const saved = {
-        conception: getChatData('conception'),
-        pregnancy: getChatData('pregnancy'),
-        birth: getChatData('birth'),
-        babyCare: getChatData('babyCare')
-    };
-
-    return `
-<div id="life-tracker-panel">
-    <div class="lt-header">
-        <h3><i class="fa-solid fa-heart-pulse"></i> ${t('title')}</h3>
-        <button class="lt-close-btn" id="lt-close"><i class="fa-solid fa-xmark"></i></button>
-    </div>
-
-    <div class="lt-tabs">
-        <button class="lt-tab active" data-tab="conception">
-            <i class="fa-solid fa-dice"></i>
-            <span>${t('conception')}</span>
-        </button>
-        <button class="lt-tab" data-tab="pregnancy">
-            <i class="fa-solid fa-person-pregnant"></i>
-            <span>${t('pregnancy')}</span>
-        </button>
-        <button class="lt-tab" data-tab="birth">
-            <i class="fa-solid fa-baby-carriage"></i>
-            <span>${t('birth')}</span>
-        </button>
-        <button class="lt-tab" data-tab="babyCare">
-            <i class="fa-solid fa-baby"></i>
-            <span>${t('babyCare')}</span>
-        </button>
-    </div>
-
-    <div class="lt-content">
-        <!-- CONCEPTION -->
-        <div class="lt-section active" id="lt-conception">
-            <div class="lt-info"><i class="fa-solid fa-circle-info"></i>${t('infoConception')}</div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('baseChance')}</label>
-                    <input type="number" id="lt-c-chance" value="25" min="1" max="100">
-                </div>
-                <div class="lt-field">
-                    <label>${t('manualRoll')}</label>
-                    <input type="number" id="lt-c-manual" placeholder="${t('manualRollHint')}" min="1" max="100">
-                </div>
-            </div>
-            <div class="lt-field">
-                <label>${t('storyDate')}</label>
-                <input type="date" id="lt-c-date" value="${new Date().toISOString().split('T')[0]}">
-            </div>
-            <div class="lt-actions">
-                <button class="lt-btn lt-btn-secondary" id="lt-c-cancel"><i class="fa-solid fa-xmark"></i> ${t('cancel')}</button>
-                <button class="lt-btn lt-btn-primary" id="lt-c-roll"><i class="fa-solid fa-dice"></i> ${t('rollInsert')}</button>
-            </div>
-        </div>
-
-        <!-- PREGNANCY -->
-        <div class="lt-section" id="lt-pregnancy">
-            <div class="lt-info"><i class="fa-solid fa-circle-info"></i>${t('infoPregnancy')}${saved.pregnancy ? `<span class="lt-saved-badge"><i class="fa-solid fa-check"></i> ${t('saved')}</span>` : ''}</div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('week')}</label>
-                    <input type="number" id="lt-p-week" value="${saved.pregnancy?.week || 8}" min="1" max="42">
-                </div>
-                <div class="lt-field">
-                    <label>${t('dueDate')}</label>
-                    <input type="date" id="lt-p-due" value="${saved.pregnancy?.rawDue || ''}">
-                </div>
-            </div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('knowledge')}</label>
-                    <select id="lt-p-disclosed">
-                        <option value="false">${t('hidden')}</option>
-                        <option value="true" ${saved.pregnancy?.disclosed ? 'selected' : ''}>${t('disclosed')}</option>
-                    </select>
-                </div>
-                <div class="lt-field">
-                    <label>${t('gender')}</label>
-                    <select id="lt-p-gender">
-                        <option value="${t('unknown')}">${t('unknown')}</option>
-                        <option value="${t('boy')}">${t('boy')}</option>
-                        <option value="${t('girl')}">${t('girl')}</option>
-                        <option value="${t('twins')}">${t('twins')}</option>
-                    </select>
-                </div>
-            </div>
-            <div class="lt-field">
-                <label>${t('symptoms')}</label>
-                <input type="text" id="lt-p-symptoms" placeholder="${t('symptomsHint')}" value="${saved.pregnancy?.symptoms || ''}">
-            </div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('nextVisit')}</label>
-                    <input type="text" id="lt-p-visit" value="${saved.pregnancy?.nextVisit || ''}">
-                </div>
-                <div class="lt-field">
-                    <label>${t('risks')}</label>
-                    <input type="text" id="lt-p-risks" placeholder="${t('stable')}" value="${saved.pregnancy?.risks || ''}">
-                </div>
-            </div>
-            <div class="lt-actions">
-                <button class="lt-btn lt-btn-secondary" id="lt-p-cancel"><i class="fa-solid fa-xmark"></i> ${t('cancel')}</button>
-                <button class="lt-btn lt-btn-primary" id="lt-p-insert"><i class="fa-solid fa-paste"></i> ${t('insert')}</button>
-            </div>
-        </div>
-
-        <!-- BIRTH -->
-        <div class="lt-section" id="lt-birth">
-            <div class="lt-info"><i class="fa-solid fa-circle-info"></i>${t('infoBirth')}</div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('gender')}</label>
-                    <select id="lt-b-gender">
-                        <option value="${t('girl')}">${t('girl')}</option>
-                        <option value="${t('boy')}">${t('boy')}</option>
-                        <option value="${t('twins')}">${t('twins')}</option>
-                    </select>
-                </div>
-                <div class="lt-field">
-                    <label>${t('usAccuracy')}</label>
-                    <select id="lt-b-accuracy">
-                        <option value="${t('confirmed')}">${t('confirmed')}</option>
-                        <option value="${t('missed')}">${t('missed')}</option>
-                    </select>
-                </div>
-            </div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('weight')}</label>
-                    <input type="number" id="lt-b-weight" value="3.2" step="0.1" min="1" max="6">
-                </div>
-                <div class="lt-field">
-                    <label>${t('height')}</label>
-                    <input type="number" id="lt-b-height" value="50" min="30" max="60">
-                </div>
-            </div>
-            <div class="lt-field">
-                <label>${t('dominance')}</label>
-                <input type="text" id="lt-b-dominance" placeholder="Mother (60%)">
-            </div>
-            <div class="lt-field">
-                <label>${t('features')}</label>
-                <input type="text" id="lt-b-features" placeholder="${t('featuresHint')}">
-            </div>
-            <div class="lt-field">
-                <label>${t('temperament')}</label>
-                <input type="text" id="lt-b-temperament" placeholder="${t('temperamentHint')}">
-            </div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('health')}</label>
-                    <select id="lt-b-health">
-                        <option value="${t('excellent')}">${t('excellent')}</option>
-                        <option value="${t('stable')}">${t('stable')}</option>
-                        <option value="${t('underObs')}">${t('underObs')}</option>
-                        <option value="${t('critical')}">${t('critical')}</option>
-                    </select>
-                </div>
-                <div class="lt-field">
-                    <label>${t('pathology')}</label>
-                    <input type="text" id="lt-b-pathology" placeholder="${t('noneDetected')}">
-                </div>
-            </div>
-            <div class="lt-actions">
-                <button class="lt-btn lt-btn-secondary" id="lt-b-cancel"><i class="fa-solid fa-xmark"></i> ${t('cancel')}</button>
-                <button class="lt-btn lt-btn-primary" id="lt-b-insert"><i class="fa-solid fa-paste"></i> ${t('insert')}</button>
-            </div>
-        </div>
-
-        <!-- BABY CARE -->
-        <div class="lt-section" id="lt-babyCare">
-            <div class="lt-info"><i class="fa-solid fa-circle-info"></i>${t('infoBaby')}${saved.babyCare ? `<span class="lt-saved-badge"><i class="fa-solid fa-check"></i> ${t('saved')}</span>` : ''}</div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('babyName')}</label>
-                    <input type="text" id="lt-bc-name" value="${saved.babyCare?.name || ''}">
-                </div>
-                <div class="lt-field">
-                    <label>${t('age')}</label>
-                    <input type="text" id="lt-bc-age" placeholder="2 weeks" value="${saved.babyCare?.age || ''}">
-                </div>
-            </div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('hunger')}</label>
-                    <select id="lt-bc-hunger">
-                        <option value="${t('full')}">${t('full')}</option>
-                        <option value="${t('satisfied')}">${t('satisfied')}</option>
-                        <option value="${t('hungry')}">${t('hungry')}</option>
-                        <option value="${t('starving')}">${t('starving')}</option>
-                    </select>
-                </div>
-                <div class="lt-field">
-                    <label>${t('hygiene')}</label>
-                    <select id="lt-bc-hygiene">
-                        <option value="${t('clean')}">${t('clean')}</option>
-                        <option value="${t('needsChange')}">${t('needsChange')}</option>
-                        <option value="${t('soiled')}">${t('soiled')}</option>
-                    </select>
-                </div>
-            </div>
-            <div class="lt-row">
-                <div class="lt-field">
-                    <label>${t('energy')}</label>
-                    <select id="lt-bc-energy">
-                        <option value="${t('rested')}">${t('rested')}</option>
-                        <option value="${t('awake')}">${t('awake')}</option>
-                        <option value="${t('tired')}">${t('tired')}</option>
-                        <option value="${t('exhausted')}">${t('exhausted')}</option>
-                    </select>
-                </div>
-                <div class="lt-field">
-                    <label>${t('mood')}</label>
-                    <select id="lt-bc-mood">
-                        <option value="${t('content')}">${t('content')}</option>
-                        <option value="${t('happy')}">${t('happy')}</option>
-                        <option value="${t('fussy')}">${t('fussy')}</option>
-                        <option value="${t('crying')}">${t('crying')}</option>
-                    </select>
-                </div>
-            </div>
-            <div class="lt-field">
-                <label>${t('traits')}</label>
-                <input type="text" id="lt-bc-traits" value="${saved.babyCare?.traits || ''}">
-            </div>
-            <div class="lt-field">
-                <label>${t('milestone')}</label>
-                <input type="text" id="lt-bc-milestone" value="${saved.babyCare?.milestone || ''}">
-            </div>
-            <div class="lt-field">
-                <label>${t('medical')}</label>
-                <input type="text" id="lt-bc-medical" value="${saved.babyCare?.medical || ''}">
-            </div>
-            <div class="lt-field">
-                <label>${t('immediateNeed')}</label>
-                <input type="text" id="lt-bc-need" value="${saved.babyCare?.immediateNeed || ''}">
-            </div>
-            <div class="lt-actions">
-                <button class="lt-btn lt-btn-secondary" id="lt-bc-cancel"><i class="fa-solid fa-xmark"></i> ${t('cancel')}</button>
-                <button class="lt-btn lt-btn-primary" id="lt-bc-insert"><i class="fa-solid fa-paste"></i> ${t('insert')}</button>
-            </div>
-        </div>
-    </div>
-</div>`;
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  HANDLERS
-// ═══════════════════════════════════════════════════════════════
-
-function closePanel() {
-    $('#life-tracker-panel').removeClass('open');
+function closePopup() {
+    $('#lt-popup').removeClass('open');
     $('#life-tracker-button').removeClass('active');
+    showMenu();
 }
 
-function togglePanel() {
-    const $panel = $('#life-tracker-panel');
-    const $btn = $('#life-tracker-button');
-    if ($panel.hasClass('open')) {
-        closePanel();
+function togglePopup() {
+    const $popup = $('#lt-popup');
+    if ($popup.hasClass('open')) {
+        closePopup();
     } else {
-        $panel.addClass('open');
-        $btn.addClass('active');
+        $popup.addClass('open');
+        $('#life-tracker-button').addClass('active');
     }
 }
 
-function handleConceptionRoll() {
-    const chance = parseInt($('#lt-c-chance').val()) || 25;
-    const manual = $('#lt-c-manual').val();
-    const roll = manual ? parseInt(manual) : Math.floor(Math.random() * 100) + 1;
-    const success = roll <= chance;
-    const storyDate = $('#lt-c-date').val() || new Date().toISOString().split('T')[0];
-    const dueDate = success ? formatDate(calculateDueDate(storyDate)) : 'N/A';
-
-    const data = { roll, success, dueDate, conceptionDate: storyDate };
-    saveChatData('conception', data);
-    insertToTextarea(TEMPLATES.conception(data));
-    closePanel();
+function showMenu() {
+    $('#lt-menu').show();
+    $('#lt-settings').removeClass('open').empty();
 }
 
-function handlePregnancyInsert() {
-    const week = parseInt($('#lt-p-week').val()) || 8;
-    const rawDue = $('#lt-p-due').val();
-
-    const data = {
-        week,
-        size: getBabySize(week),
-        dueDate: formatDate(rawDue),
-        rawDue,
-        disclosed: $('#lt-p-disclosed').val() === 'true',
-        gender: $('#lt-p-gender').val(),
-        symptoms: $('#lt-p-symptoms').val() || t('stable'),
-        nextVisit: $('#lt-p-visit').val() || 'TBD',
-        risks: $('#lt-p-risks').val() || t('stable')
-    };
-
-    saveChatData('pregnancy', data);
-    insertToTextarea(TEMPLATES.pregnancy(data));
-    closePanel();
+function showSettings(type) {
+    $('#lt-menu').hide();
+    const saved = getChatData(type);
+    const html = SETTINGS_HTML[type](saved);
+    $('#lt-settings').html(html).addClass('open');
+    bindSettingsEvents(type);
 }
 
-function handleBirthInsert() {
-    const data = {
-        gender: $('#lt-b-gender').val(),
-        usAccuracy: $('#lt-b-accuracy').val(),
-        weight: $('#lt-b-weight').val(),
-        height: $('#lt-b-height').val(),
-        dominance: $('#lt-b-dominance').val() || 'Mother (60%)',
-        features: $('#lt-b-features').val() || "Mother's eyes, Father's hair",
-        temperament: $('#lt-b-temperament').val() || 'Calm, Curious, Alert',
-        health: $('#lt-b-health').val(),
-        pathology: $('#lt-b-pathology').val() || t('noneDetected'),
-        timestamp: new Date().toLocaleDateString()
-    };
+function bindSettingsEvents(type) {
+    $('#lt-back').on('click', showMenu);
+    $('#lt-cancel').on('click', closePopup);
 
-    saveChatData('birth', data);
-    insertToTextarea(TEMPLATES.birth(data));
-    closePanel();
-}
+    switch (type) {
+        case 'conception':
+            $('#lt-c-roll').on('click', () => {
+                const chance = parseInt($('#lt-c-chance').val()) || 25;
+                const manual = $('#lt-c-manual').val();
+                const roll = manual ? parseInt(manual) : Math.floor(Math.random() * 100) + 1;
+                const success = roll <= chance;
+                const storyDate = $('#lt-c-date').val() || new Date().toISOString().split('T')[0];
+                const dueDate = success ? formatDate(calculateDueDate(storyDate)) : 'N/A';
+                const data = { roll, success, dueDate, conceptionDate: storyDate };
+                saveChatData('conception', data);
+                insertToTextarea(TEMPLATES.conception(data));
+                closePopup();
+            });
+            break;
 
-function handleBabyCareInsert() {
-    const data = {
-        name: $('#lt-bc-name').val() || 'Unnamed',
-        age: $('#lt-bc-age').val() || '0 weeks',
-        hunger: $('#lt-bc-hunger').val(),
-        hygiene: $('#lt-bc-hygiene').val(),
-        energy: $('#lt-bc-energy').val(),
-        mood: $('#lt-bc-mood').val(),
-        traits: $('#lt-bc-traits').val() || 'Calm, Curious',
-        milestone: $('#lt-bc-milestone').val() || 'Social smiling',
-        medical: $('#lt-bc-medical').val() || 'TBD',
-        immediateNeed: $('#lt-bc-need').val() || 'None'
-    };
+        case 'pregnancy':
+            $('#lt-p-insert').on('click', () => {
+                const week = parseInt($('#lt-p-week').val()) || 8;
+                const rawDue = $('#lt-p-due').val();
+                const data = {
+                    week,
+                    size: BABY_SIZES[week] || 'Baby',
+                    dueDate: formatDate(rawDue),
+                    rawDue,
+                    disclosed: $('#lt-p-disclosed').val() === 'true',
+                    gender: $('#lt-p-gender').val(),
+                    symptoms: $('#lt-p-symptoms').val() || 'None',
+                    nextVisit: $('#lt-p-visit').val() || 'TBD',
+                    risks: $('#lt-p-risks').val() || 'Stable'
+                };
+                saveChatData('pregnancy', data);
+                insertToTextarea(TEMPLATES.pregnancy(data));
+                closePopup();
+            });
+            break;
 
-    saveChatData('babyCare', data);
-    insertToTextarea(TEMPLATES.babyCare(data));
-    closePanel();
-}
+        case 'birth':
+            $('#lt-b-insert').on('click', () => {
+                const data = {
+                    gender: $('#lt-b-gender').val(),
+                    usAccuracy: $('#lt-b-accuracy').val(),
+                    weight: $('#lt-b-weight').val(),
+                    height: $('#lt-b-height').val(),
+                    dominance: $('#lt-b-dominance').val() || 'Mother (60%)',
+                    features: $('#lt-b-features').val() || "Mother's eyes, Father's hair",
+                    temperament: $('#lt-b-temperament').val() || 'Calm, Curious',
+                    health: $('#lt-b-health').val(),
+                    pathology: $('#lt-b-pathology').val() || 'None',
+                    timestamp: new Date().toLocaleDateString()
+                };
+                saveChatData('birth', data);
+                insertToTextarea(TEMPLATES.birth(data));
+                closePopup();
+            });
+            break;
 
-function bindEvents() {
-    // Toggle panel
-    $('#life-tracker-button').on('click', (e) => {
-        e.stopPropagation();
-        togglePanel();
-    });
-
-    // Close button
-    $('#lt-close').on('click', closePanel);
-
-    // Tab switching
-    $('.lt-tab').on('click', function() {
-        const tab = $(this).data('tab');
-        $('.lt-tab').removeClass('active');
-        $(this).addClass('active');
-        $('.lt-section').removeClass('active');
-        $(`#lt-${tab}`).addClass('active');
-    });
-
-    // Conception
-    $('#lt-c-roll').on('click', handleConceptionRoll);
-    $('#lt-c-cancel').on('click', closePanel);
-
-    // Pregnancy
-    $('#lt-p-insert').on('click', handlePregnancyInsert);
-    $('#lt-p-cancel').on('click', closePanel);
-
-    // Birth
-    $('#lt-b-insert').on('click', handleBirthInsert);
-    $('#lt-b-cancel').on('click', closePanel);
-
-    // Baby Care
-    $('#lt-bc-insert').on('click', handleBabyCareInsert);
-    $('#lt-bc-cancel').on('click', closePanel);
-
-    // Close on outside click
-    $(document).on('click', (e) => {
-        if (!$(e.target).closest('#life-tracker-panel').length &&
-            !$(e.target).closest('#life-tracker-button').length) {
-            closePanel();
-        }
-    });
-
-    // Close on Escape
-    $(document).on('keydown', (e) => {
-        if (e.key === 'Escape') closePanel();
-    });
+        case 'babyCare':
+            $('#lt-bc-insert').on('click', () => {
+                const data = {
+                    name: $('#lt-bc-name').val() || 'Unnamed',
+                    age: $('#lt-bc-age').val() || '0 weeks',
+                    hunger: $('#lt-bc-hunger').val(),
+                    hygiene: $('#lt-bc-hygiene').val(),
+                    energy: $('#lt-bc-energy').val(),
+                    mood: $('#lt-bc-mood').val(),
+                    traits: $('#lt-bc-traits').val() || 'Calm',
+                    milestone: $('#lt-bc-milestone').val() || 'Smiling',
+                    medical: $('#lt-bc-medical').val() || 'TBD',
+                    immediateNeed: $('#lt-bc-need').val() || 'None'
+                };
+                saveChatData('babyCare', data);
+                insertToTextarea(TEMPLATES.babyCare(data));
+                closePopup();
+            });
+            break;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -745,20 +498,60 @@ function bindEvents() {
 // ═══════════════════════════════════════════════════════════════
 
 jQuery(async () => {
-    // Settings
     if (!extension_settings[extensionName]) {
         extension_settings[extensionName] = { chatData: {} };
     }
 
-    // Add button (same way as original working version)
-    const buttonHtml = `<div id="life-tracker-button" class="fa-solid fa-heart-pulse" title="Life Tracker"></div>`;
-    $('#leftSendForm').prepend(buttonHtml);
+    // Create wrapper with button and popup
+    const wrapperHtml = `
+    <div id="lt-wrapper">
+        <div id="life-tracker-button" class="fa-solid fa-heart-pulse" title="Life Tracker"></div>
+        <div id="lt-popup">
+            <div class="lt-header">
+                <h3><i class="fa-solid fa-heart-pulse"></i> Life Tracker</h3>
+                <button class="lt-close-btn" id="lt-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="lt-menu" id="lt-menu">
+                <button class="lt-menu-item" data-type="conception">
+                    <i class="fa-solid fa-dice"></i> Conception Roll
+                </button>
+                <button class="lt-menu-item" data-type="pregnancy">
+                    <i class="fa-solid fa-person-pregnant"></i> Pregnancy Tracker
+                </button>
+                <button class="lt-menu-item" data-type="birth">
+                    <i class="fa-solid fa-baby-carriage"></i> Birth Report
+                </button>
+                <button class="lt-menu-item" data-type="babyCare">
+                    <i class="fa-solid fa-baby"></i> Baby Care
+                </button>
+            </div>
+            <div class="lt-settings" id="lt-settings"></div>
+        </div>
+    </div>`;
 
-    // Add panel to body
-    $('body').append(getPanelHTML());
+    $('#leftSendForm').prepend(wrapperHtml);
 
-    // Bind all events
-    bindEvents();
+    // Events
+    $('#life-tracker-button').on('click', (e) => {
+        e.stopPropagation();
+        togglePopup();
+    });
+
+    $('#lt-close').on('click', closePopup);
+
+    $('.lt-menu-item').on('click', function() {
+        showSettings($(this).data('type'));
+    });
+
+    $(document).on('click', (e) => {
+        if (!$(e.target).closest('#lt-wrapper').length) {
+            closePopup();
+        }
+    });
+
+    $(document).on('keydown', (e) => {
+        if (e.key === 'Escape') closePopup();
+    });
 
     console.log('[Life Tracker] Ready');
 });
