@@ -863,16 +863,16 @@ function setupBabyCareHandlers(data) {
         const baby = babies.find(b => b.id === babyId);
 
         if (babies.length === 1) {
-            // Единственный бейби — спрашиваем и очищаем всё
             if (confirm(`Remove ${baby?.name || 'this baby'}? This will clear the Baby Care tracker.`)) {
                 state.data.babies = [];
                 state.data.currentBabyId = null;
+                state.active = null;  // ← ДОБАВЬ ЭТО! Сбрасываем active
                 saveState();
                 closePopup();
-                showTrackerForm('babyCare');
+                updateMenuState();  // ← Обновляем меню
+                showToast('Baby removed', 'warning');
             }
         } else {
-            // Несколько бейби — просто удаляем одного
             if (confirm(`Remove ${baby?.name || 'this baby'}?`)) {
                 removeBaby(babyId);
                 closePopup();
@@ -880,10 +880,19 @@ function setupBabyCareHandlers(data) {
             }
         }
     });
+
+    // Обновление превью при изменении полей
+    const form = document.getElementById('flt-form');
+    if (form) {
+        form.addEventListener('input', () => updatePreview('babyCare'));
+        form.addEventListener('change', () => updatePreview('babyCare'));
+    }
 }
 
 function getFormData() {
     const form = document.getElementById('flt-form');
+    if (!form) return {};
+
     const data = {};
     new FormData(form).forEach((value, key) => { if (value && value.trim()) data[key] = value.trim(); });
 
@@ -913,16 +922,20 @@ function getFormData() {
             sleepPattern: data.babySleepPattern || ''
         };
 
-        // Копируем существующих бейби или создаём новый массив
-        let babies = [...(state.data.babies || [])];
+        // Копируем существующих бейби
+        let babies = JSON.parse(JSON.stringify(state.data.babies || []));
 
         // Находим и обновляем текущего бейби
         const idx = babies.findIndex(b => b.id === currentId);
         if (idx >= 0) {
             babies[idx] = { ...babies[idx], ...babyData };
         } else if (babyData.name) {
-            // Если бейби нет в массиве но есть имя — добавляем
             babies.push(babyData);
+        }
+
+        // ВАЖНО: Если есть хоть одно поле заполнено, но babies пустой — создаём бейби
+        if (babies.length === 0 && (babyData.name || data.babyName)) {
+            babies.push({ ...babyData, id: 1 });
         }
 
         data.babies = babies;
@@ -1009,8 +1022,32 @@ function showSettingsPopup() {
 function updateMenuState() {
     const statusOpt = document.getElementById('flt-status-opt');
     const badge = document.getElementById('flt-active-badge');
-    if (statusOpt) statusOpt.style.display = state.active ? 'flex' : 'none';
-    if (badge) { if (state.active) { const t = TRACKERS[state.active]; badge.innerHTML = `<i class="${t.icon}" style="font-size:10px;"></i>`; badge.style.background = t.color; badge.style.display = 'flex'; } else { badge.style.display = 'none'; } }
+
+    // Проверяем есть ли реально активный трекер с данными
+    let hasActiveTracker = false;
+
+    if (state.active) {
+        if (state.active === 'babyCare') {
+            // Для babyCare проверяем есть ли бейби
+            hasActiveTracker = state.data.babies && state.data.babies.length > 0;
+        } else {
+            // Для остальных трекеров просто проверяем active
+            hasActiveTracker = true;
+        }
+    }
+
+    if (statusOpt) statusOpt.style.display = hasActiveTracker ? 'flex' : 'none';
+
+    if (badge) {
+        if (hasActiveTracker) {
+            const t = TRACKERS[state.active];
+            badge.innerHTML = `<i class="${t.icon}" style="font-size:10px;"></i>`;
+            badge.style.background = t.color;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
 }
 
 function addMenu() {
