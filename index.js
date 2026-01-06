@@ -640,32 +640,41 @@ function showToast(message, type = 'success') {
 /* ═══════════════════════════════════════════════════════════════
    POPUP SYSTEM
    ═══════════════════════════════════════════════════════════════ */
+function closePopup() {
+    const popup = document.getElementById("flt-popup");
+    if (popup) {
+        popup.remove();
+    }
+    document.body.style.overflow = '';
+}
 
 function createPopup(content, width = "500px") {
     closePopup();
+    const isMobile = window.innerWidth <= 768;
 
     const popup = document.createElement("div");
     popup.id = "flt-popup";
 
-    const bg = document.createElement("div");
-    bg.id = "flt-popup-bg";
-
-    const container = document.createElement("div");
-    container.id = "flt-popup-container";
-
-    // Width only matters on desktop, CSS handles mobile
-    if (window.innerWidth > 768) {
-        container.style.width = `min(${width}, 90vw)`;
+    if (isMobile) {
+        popup.innerHTML = `
+            <div id="flt-popup-bg" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99998;"></div>
+            <div id="flt-popup-container" style="position:fixed;top:10px;left:10px;right:10px;bottom:10px;background:var(--SmartThemeBlurTintColor);border:1px solid var(--SmartThemeBorderColor);border-radius:12px;padding:16px;z-index:99999;overflow-y:auto;-webkit-overflow-scrolling:touch;">
+                ${content}
+            </div>
+        `;
+    } else {
+        popup.innerHTML = `
+            <div id="flt-popup-bg" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99998;"></div>
+            <div id="flt-popup-container" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(${width},90vw);max-height:85vh;background:var(--SmartThemeBlurTintColor);border:1px solid var(--SmartThemeBorderColor);border-radius:12px;padding:20px;z-index:99999;overflow-y:auto;">
+                ${content}
+            </div>
+        `;
     }
 
-    container.innerHTML = content;
-
-    popup.appendChild(bg);
-    popup.appendChild(container);
     document.body.appendChild(popup);
     document.body.style.overflow = 'hidden';
 
-    bg.addEventListener("click", closePopup);
+    document.getElementById("flt-popup-bg").addEventListener("click", closePopup);
 
     const escHandler = (e) => {
         if (e.key === 'Escape') {
@@ -674,9 +683,6 @@ function createPopup(content, width = "500px") {
         }
     };
     document.addEventListener('keydown', escHandler);
-
-    // Debug - remove after testing
-    console.log('FLT Popup opened. Screen width:', window.innerWidth, 'Mobile:', window.innerWidth <= 768);
 }
 
 /* ═══════════════════════════════════════════════════════════════
