@@ -1,8 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════
    FAWN'S LIFE TRACKER - STYLES
+   Minimal CSS - most styles are inline in JS
    ═══════════════════════════════════════════════════════════════ */
 
-/* Animations */
+/* Animations - these are used by JS */
 @keyframes flt-toastIn {
     from { opacity: 0; transform: translate(-50%, -20px); }
     to { opacity: 1; transform: translate(-50%, 0); }
@@ -28,69 +29,8 @@
     animation: flt-fadeIn 0.3s ease;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   POPUP STYLES - Force correct sizing
-   ═══════════════════════════════════════════════════════════════ */
-
-#flt-popup {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: 99997 !important;
-}
-
-#flt-popup-bg {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.7) !important;
-    z-index: 99998 !important;
-}
-
-#flt-popup-container {
-    position: fixed !important;
-    background: var(--SmartThemeBlurTintColor) !important;
-    border: 1px solid var(--SmartThemeBorderColor) !important;
-    border-radius: 12px !important;
-    z-index: 99999 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    box-sizing: border-box !important;
-}
-
-/* Desktop */
-@media (min-width: 769px) {
-    #flt-popup-container {
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: auto !important;
-        max-width: 90vw !important;
-        max-height: 85vh !important;
-        padding: 20px !important;
-    }
-}
-
-/* Mobile / Tablet */
+/* Mobile menu fix */
 @media (max-width: 768px) {
-    #flt-popup-container {
-        top: 10px !important;
-        left: 10px !important;
-        right: 10px !important;
-        bottom: 10px !important;
-        width: calc(100vw - 20px) !important;
-        height: calc(100vh - 20px) !important;
-        max-width: none !important;
-        max-height: none !important;
-        transform: none !important;
-        padding: 16px !important;
-        -webkit-overflow-scrolling: touch;
-    }
-
     #flt-menu {
         min-width: calc(100vw - 40px) !important;
         left: 20px !important;
