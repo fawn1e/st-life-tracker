@@ -258,16 +258,21 @@ function genPregnancyHTML(d, baseStyle, m) {
     const riskColors = { 'Stable': '#4caf50', 'Mild Concern': '#8bc34a', 'Moderate Risk': '#f4a261', 'High Risk': '#e76f51', 'Critical': '#dc3545' };
     const riskColor = riskColors[d.risks] || '#4caf50';
     return `<div style="${baseStyle}background:color-mix(in srgb,var(--SmartThemeBodyColor) 5%,transparent);border:1px solid var(--SmartThemeBorderColor);border-radius:8px;padding:12px;">
-            <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#e91e63;text-transform:uppercase;letter-spacing:1px;"><i class="fa-solid fa-person-pregnant"></i> Pregnancy <span style="font-size:0.7em;opacity:0.7;">• ${d.knowledge || 'Hidden'}</span></div>        <div style="display:grid;grid-template-columns:${m ? '1fr 1fr' : 'repeat(4, 1fr)'};gap:8px;margin-bottom:10px;">
+        <div style="border-bottom:1px dashed var(--SmartThemeBorderColor);margin-bottom:10px;padding-bottom:8px;font-weight:bold;color:#e91e63;text-transform:uppercase;letter-spacing:1px;"><i class="fa-solid fa-person-pregnant"></i> Pregnancy <span style="font-size:0.7em;opacity:0.7;">• ${d.knowledge || 'Hidden'}</span></div>
+        <div style="display:grid;grid-template-columns:${m ? '1fr 1fr' : 'repeat(4, 1fr)'};gap:8px;margin-bottom:10px;">
             <div><span style="opacity:0.5;font-size:0.85em;">Week</span><br><strong>${week}</strong></div>
             <div><span style="opacity:0.5;font-size:0.85em;">Size</span><br><strong>${size}</strong></div>
             <div><span style="opacity:0.5;font-size:0.85em;">Due</span><br><strong>${d.dueDate || '??'}</strong></div>
             <div><span style="opacity:0.5;font-size:0.85em;">Gender</span><br><strong>${d.ultrasoundGender || '??'}</strong></div>
         </div>
+        ${d.fetalCount && d.fetalCount !== '1' ? `<div style="padding:6px 8px;background:color-mix(in srgb,#9b59b6 15%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-baby" style="color:#9b59b6;"></i> ${d.fetalCount === '2' ? 'Twins' : d.fetalCount === '3' ? 'Triplets' : d.fetalCount}</div>` : ''}
         ${d.symptoms ? `<div style="padding:8px;background:color-mix(in srgb,var(--SmartThemeBodyColor) 3%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-head-side-virus" style="opacity:0.5;"></i> ${d.symptoms}</div>` : ''}
-        ${d.nextVisit || d.testsNeeded ? `<div style="padding:8px;background:color-mix(in srgb,#2196f3 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-calendar-check" style="color:#2196f3;"></i> ${d.nextVisit ? `Next: ${d.nextVisit}` : ''}${d.nextVisit && d.testsNeeded ? ' • ' : ''}${d.testsNeeded ? `Tests: ${d.testsNeeded}` : ''}</div>` : ''}
+        ${d.nextVisit || d.testsNeeded || d.visitType ? `<div style="padding:8px;background:color-mix(in srgb,#2196f3 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-calendar-check" style="color:#2196f3;"></i> ${d.nextVisit ? `Next: ${d.nextVisit}` : ''}${d.visitType ? ` (${d.visitType})` : ''}${(d.nextVisit || d.visitType) && d.testsNeeded ? ' • ' : ''}${d.testsNeeded ? `Tests: ${d.testsNeeded}` : ''}</div>` : ''}
+        ${d.medications ? `<div style="padding:8px;background:color-mix(in srgb,#4caf50 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-pills" style="color:#4caf50;"></i> ${d.medications}</div>` : ''}
+        ${d.doctorAdvice ? `<div style="padding:8px;background:color-mix(in srgb,#ff9800 10%,transparent);border-radius:6px;margin-bottom:10px;font-size:0.9em;"><i class="fa-solid fa-user-doctor" style="color:#ff9800;"></i> ${d.doctorAdvice}${d.adviceFollowed && d.adviceFollowed !== 'N/A' ? `<div style="margin-top:4px;font-size:0.85em;opacity:0.8;"><i class="fa-solid fa-clipboard-check"></i> ${d.adviceFollowed}</div>` : ''}</div>` : ''}
         <div style="padding:8px 10px;background:color-mix(in srgb,${riskColor} 15%,transparent);border-left:3px solid ${riskColor};border-radius:0 6px 6px 0;">
             <span style="color:${riskColor};font-weight:bold;"><i class="fa-solid fa-heart-pulse"></i> ${d.risks || 'Stable'}</span>
+            ${d.riskType && d.riskType !== '' ? `<div style="font-size:0.85em;opacity:0.9;margin-top:4px;">${d.riskType === 'other' ? (d.riskTypeCustom || 'Other') : d.riskType}</div>` : ''}
             ${d.risksDetails ? `<div style="font-size:0.85em;opacity:0.8;margin-top:4px;">${d.risksDetails}</div>` : ''}
         </div>
     </div>`;
