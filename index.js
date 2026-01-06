@@ -66,9 +66,12 @@ function getCurrentBaby() {
 
 function addBaby(babyData) {
     if (!state.data.babies) state.data.babies = [];
-    const newId = state.data.babies.length > 0 ? Math.max(...state.data.babies.map(b => b.id)) + 1 : 1;
+    const newId = state.data.babies.length > 0
+        ? Math.max(...state.data.babies.map(b => b.id)) + 1
+        : 1;
     state.data.babies.push({ id: newId, ...babyData });
     state.data.currentBabyId = newId;
+    state.active = 'babyCare';  // ← ДОБАВЬ ЭТУ СТРОКУ!
     saveState();
     return newId;
 }
@@ -458,7 +461,7 @@ function showTrackerForm(trackerId) {
     if (!tracker) return;
     currentFormTracker = trackerId;
     const m = window.innerWidth <= 768;
-    const savedData = state.active === trackerId ? state.data : {};
+    const savedData = (state.active === trackerId || trackerId === 'babyCare') ? state.data : {};
     let formContent = '';
     switch (trackerId) {
         case 'conception': formContent = buildConceptionForm(savedData); break;
