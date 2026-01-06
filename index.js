@@ -408,10 +408,11 @@ function showTrackerForm(trackerId) {
         ${btnRow(btn('flt-start', 'fa-solid fa-play', 'Start Tracking', true), btn('flt-cancel', 'fa-solid fa-xmark', 'Cancel'))}
     `;
     createPopup(content, "650px");
-    document.querySelectorAll('#flt-form input, #flt-form select, #flt-form textarea').forEach(el => {
-        el.addEventListener('input', () => updatePreview(currentFormTracker));
-        el.addEventListener('change', () => updatePreview(currentFormTracker));
-    });
+const form = document.getElementById('flt-form');
+if (form) {
+    form.addEventListener('input', () => updatePreview(currentFormTracker));
+    form.addEventListener('change', () => updatePreview(currentFormTracker));
+}
     setupTrackerHandlers(trackerId, savedData);
     document.getElementById('flt-start').addEventListener('click', () => { startTracker(trackerId, getFormData()); });
     document.getElementById('flt-cancel').addEventListener('click', closePopup);
@@ -627,12 +628,12 @@ function getFormData() {
 
 function updatePreview(trackerId) {
     const form = document.getElementById('flt-form');
-    const tracker = trackerId || form?.dataset?.tracker;
+    const tracker = trackerId || form?.dataset?.tracker || currentFormTracker;
     if (!tracker) return;
 
     const preview = document.getElementById('flt-preview');
     if (preview) {
-        preview.innerHTML = generateTrackerHTML(tracker, getFormData(), false);
+        preview.innerHTML = generateTrackerHTML(tracker, getFormData());
     }
 }
 
