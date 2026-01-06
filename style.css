@@ -1,6 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════
-   LIFE TRACKER - ST-NATIVE STYLES
+   LIFE TRACKER - POPUP OVER BUTTON
    ═══════════════════════════════════════════════════════════════ */
+
+/* ===== WRAPPER ===== */
+#lt-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
 
 /* ===== TRIGGER BUTTON ===== */
 #life-tracker-button {
@@ -20,31 +27,31 @@
     color: var(--SmartThemeQuoteColor);
 }
 
-/* ===== MAIN PANEL ===== */
-#life-tracker-panel {
+/* ===== POPUP PANEL ===== */
+#lt-popup {
     display: none;
-    position: fixed;
-    bottom: 60px;
-    right: 20px;
-    width: 380px;
-    max-height: 70vh;
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 0;
+    width: 340px;
+    max-height: 65vh;
     background: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--SmartThemeBorderColor);
     border-radius: 10px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(12px);
-    z-index: 9999;
+    z-index: 10000;
     overflow: hidden;
     flex-direction: column;
 }
 
-#life-tracker-panel.open {
+#lt-popup.open {
     display: flex;
-    animation: ltSlideUp 0.2s ease-out;
+    animation: ltPop 0.15s ease-out;
 }
 
-@keyframes ltSlideUp {
-    from { opacity: 0; transform: translateY(10px); }
+@keyframes ltPop {
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -53,14 +60,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--SmartThemeBorderColor);
-    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent);
+    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, transparent);
 }
 
 .lt-header h3 {
     margin: 0;
-    font-size: 1em;
+    font-size: 0.95em;
     color: var(--SmartThemeBodyColor);
     display: flex;
     align-items: center;
@@ -72,7 +79,7 @@
     background: transparent;
     border: none;
     color: var(--SmartThemeBodyColor);
-    font-size: 1.1em;
+    font-size: 1em;
     cursor: pointer;
     opacity: 0.6;
     transition: opacity 0.2s;
@@ -83,68 +90,94 @@
     opacity: 1;
 }
 
-/* ===== TABS ===== */
-.lt-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--SmartThemeBorderColor);
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 3%, transparent);
+/* ===== MENU ===== */
+.lt-menu {
+    padding: 6px;
 }
 
-.lt-tab {
-    flex: 1;
-    padding: 10px 6px;
+.lt-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
     background: transparent;
     border: none;
+    border-radius: 6px;
     color: var(--SmartThemeBodyColor);
-    opacity: 0.5;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 0.75em;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    font-size: 0.9em;
     font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
 }
 
-.lt-tab i {
-    font-size: 1.1em;
-}
-
-.lt-tab:hover {
-    opacity: 0.8;
-    background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
-}
-
-.lt-tab.active {
-    opacity: 1;
+.lt-menu-item:hover {
     background: color-mix(in srgb, var(--SmartThemeQuoteColor) 15%, transparent);
-    border-bottom: 2px solid var(--SmartThemeQuoteColor);
 }
 
-/* ===== CONTENT ===== */
-.lt-content {
-    padding: 14px;
+.lt-menu-item i {
+    width: 20px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+/* ===== SETTINGS PANEL ===== */
+.lt-settings {
+    display: none;
+    padding: 12px;
     overflow-y: auto;
     max-height: 50vh;
 }
 
-.lt-section {
-    display: none;
-}
-
-.lt-section.active {
+.lt-settings.open {
     display: block;
 }
 
-/* ===== FORM ELEMENTS ===== */
-.lt-field {
+.lt-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--SmartThemeBorderColor);
+}
+
+.lt-settings-title {
+    font-weight: 600;
+    font-size: 0.9em;
+    color: var(--SmartThemeBodyColor);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lt-back-btn {
+    background: transparent;
+    border: none;
+    color: var(--SmartThemeBodyColor);
+    cursor: pointer;
+    padding: 4px 8px;
+    opacity: 0.7;
+    font-size: 0.8em;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lt-back-btn:hover {
+    opacity: 1;
+}
+
+/* ===== FORM ===== */
+.lt-field {
+    margin-bottom: 10px;
 }
 
 .lt-field label {
     display: block;
-    font-size: 0.8em;
+    font-size: 0.75em;
     margin-bottom: 4px;
     opacity: 0.7;
     color: var(--SmartThemeBodyColor);
@@ -153,10 +186,10 @@
 .lt-field input,
 .lt-field select {
     width: 100%;
-    padding: 9px 11px;
+    padding: 8px 10px;
     background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 6px;
+    border-radius: 5px;
     color: var(--SmartThemeBodyColor);
     font-size: 0.85em;
     font-family: inherit;
@@ -177,24 +210,24 @@
 .lt-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 8px;
 }
 
 /* ===== BUTTONS ===== */
 .lt-actions {
     display: flex;
     gap: 8px;
-    margin-top: 14px;
-    padding-top: 12px;
+    margin-top: 12px;
+    padding-top: 10px;
     border-top: 1px solid var(--SmartThemeBorderColor);
 }
 
 .lt-btn {
     flex: 1;
-    padding: 10px 14px;
+    padding: 9px 12px;
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 6px;
-    font-size: 0.85em;
+    border-radius: 5px;
+    font-size: 0.8em;
     cursor: pointer;
     transition: all 0.15s;
     display: flex;
@@ -224,99 +257,63 @@
     background: color-mix(in srgb, var(--SmartThemeBodyColor) 10%, transparent);
 }
 
-/* ===== INFO BOX ===== */
-.lt-info {
-    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--SmartThemeQuoteColor) 30%, transparent);
-    border-radius: 6px;
-    padding: 10px 12px;
-    margin-bottom: 14px;
-    font-size: 0.8em;
-    color: var(--SmartThemeBodyColor);
-    opacity: 0.9;
-}
-
-.lt-info i {
-    margin-right: 6px;
-    opacity: 0.8;
-}
-
-/* ===== SAVED INDICATOR ===== */
-.lt-saved-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.7em;
-    padding: 3px 7px;
-    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 20%, transparent);
-    border-radius: 4px;
-    color: var(--SmartThemeQuoteColor);
-    margin-left: 8px;
-}
-
 /* ===== SCROLLBAR ===== */
-.lt-content::-webkit-scrollbar {
-    width: 5px;
+.lt-settings::-webkit-scrollbar {
+    width: 4px;
 }
 
-.lt-content::-webkit-scrollbar-track {
+.lt-settings::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.lt-content::-webkit-scrollbar-thumb {
+.lt-settings::-webkit-scrollbar-thumb {
     background: var(--SmartThemeBorderColor);
-    border-radius: 3px;
-}
-
-.lt-content::-webkit-scrollbar-thumb:hover {
-    background: var(--SmartThemeQuoteColor);
+    border-radius: 2px;
 }
 
 /* ═══════════════════════════════════════════════════════════════
    MOBILE
    ═══════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
-    #life-tracker-panel {
+@media (max-width: 600px) {
+    #lt-popup {
+        position: fixed;
         bottom: 55px;
-        right: 8px;
         left: 8px;
+        right: 8px;
         width: auto;
-        max-height: 65vh;
+        max-height: 70vh;
     }
 
     .lt-row {
         grid-template-columns: 1fr;
+        gap: 6px;
     }
 
-    .lt-tab {
-        padding: 12px 4px;
-        font-size: 0.7em;
-    }
-
-    .lt-tab span {
-        display: none;
-    }
-
-    .lt-tab i {
-        font-size: 1.3em;
-    }
-}
-
-@media (max-width: 480px) {
-    #life-tracker-panel {
-        bottom: 50px;
-        right: 5px;
-        left: 5px;
+    .lt-menu-item {
+        padding: 12px 14px;
     }
 
     .lt-field input,
     .lt-field select {
-        padding: 11px 12px;
+        padding: 10px 12px;
         font-size: 16px;
     }
 
-    .lt-content {
-        padding: 12px;
+    .lt-settings {
+        padding: 10px;
+        max-height: 55vh;
+    }
+
+    .lt-btn {
+        padding: 11px 14px;
+    }
+}
+
+@media (max-width: 400px) {
+    #lt-popup {
+        left: 5px;
+        right: 5px;
+        bottom: 50px;
     }
 }
