@@ -1,11 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
-   LIFE TRACKER - COMPACT
+   LIFE TRACKER - TINY MENU
    ═══════════════════════════════════════════════════════════════ */
 
 #lt-wrapper {
     position: relative;
     display: inline-flex;
-    align-items: center;
 }
 
 #life-tracker-button {
@@ -21,18 +20,17 @@
     color: var(--SmartThemeQuoteColor);
 }
 
-/* ===== POPUP - FIXED WIDTH ===== */
+/* ===== TINY POPUP ===== */
 #lt-popup {
     display: none;
     position: absolute;
-    bottom: calc(100% + 8px);
+    bottom: calc(100% + 6px);
     left: 0;
-    width: 260px;
-    max-width: 260px;
+    width: 200px;
     background: var(--SmartThemeBlurTintColor);
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(12px);
     z-index: 10000;
     overflow: hidden;
@@ -40,64 +38,30 @@
 
 #lt-popup.open {
     display: block;
-    animation: ltPop 0.12s ease-out;
+    animation: ltPop 0.1s ease-out;
 }
 
 @keyframes ltPop {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
-}
-
-/* ===== HEADER ===== */
-.lt-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--SmartThemeBorderColor);
-    background: color-mix(in srgb, var(--SmartThemeQuoteColor) 8%, transparent);
-}
-
-.lt-header h3 {
-    margin: 0;
-    font-size: 0.75em;
-    color: var(--SmartThemeBodyColor);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: 600;
-}
-
-.lt-close-btn {
-    background: transparent;
-    border: none;
-    color: var(--SmartThemeBodyColor);
-    font-size: 0.85em;
-    cursor: pointer;
-    opacity: 0.5;
-    padding: 2px;
-}
-
-.lt-close-btn:hover {
-    opacity: 1;
 }
 
 /* ===== MENU ===== */
 .lt-menu {
-    padding: 3px;
+    padding: 4px;
 }
 
 .lt-menu-item {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     width: 100%;
-    padding: 6px 8px;
+    padding: 8px 10px;
     background: transparent;
     border: none;
     border-radius: 4px;
     color: var(--SmartThemeBodyColor);
-    font-size: 0.75em;
+    font-size: 0.8em;
     font-family: inherit;
     cursor: pointer;
     transition: background 0.1s;
@@ -109,18 +73,17 @@
 }
 
 .lt-menu-item i {
-    width: 14px;
+    width: 16px;
     text-align: center;
     opacity: 0.7;
-    font-size: 0.85em;
 }
 
-/* ===== SETTINGS ===== */
+/* ===== SETTINGS PANEL ===== */
 .lt-settings {
     display: none;
-    padding: 8px;
+    padding: 10px;
+    max-height: 60vh;
     overflow-y: auto;
-    max-height: 50vh;
 }
 
 .lt-settings.open {
@@ -131,18 +94,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 5px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--SmartThemeBorderColor);
 }
 
 .lt-settings-title {
     font-weight: 600;
-    font-size: 0.7em;
+    font-size: 0.8em;
     color: var(--SmartThemeBodyColor);
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
 }
 
 .lt-back-btn {
@@ -150,9 +113,9 @@
     border: none;
     color: var(--SmartThemeBodyColor);
     cursor: pointer;
-    padding: 2px 4px;
+    padding: 3px 6px;
     opacity: 0.6;
-    font-size: 0.65em;
+    font-size: 0.75em;
     font-family: inherit;
 }
 
@@ -161,69 +124,69 @@
 }
 
 /* ===== FORM ===== */
+.lt-hint {
+    font-size: 0.7em;
+    opacity: 0.5;
+    margin-bottom: 10px;
+    color: var(--SmartThemeBodyColor);
+}
+
 .lt-field {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
 .lt-field label {
     display: block;
-    font-size: 0.65em;
-    margin-bottom: 2px;
+    font-size: 0.7em;
+    margin-bottom: 3px;
     opacity: 0.6;
     color: var(--SmartThemeBodyColor);
 }
 
-.lt-field input,
-.lt-field select {
+.lt-field input {
     width: 100%;
-    padding: 5px 6px;
+    padding: 6px 8px;
     background: color-mix(in srgb, var(--SmartThemeBodyColor) 5%, transparent);
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 3px;
+    border-radius: 4px;
     color: var(--SmartThemeBodyColor);
-    font-size: 0.7em;
+    font-size: 0.75em;
     font-family: inherit;
     box-sizing: border-box;
 }
 
-.lt-field input:focus,
-.lt-field select:focus {
+.lt-field input:focus {
     outline: none;
     border-color: var(--SmartThemeQuoteColor);
 }
 
 .lt-field input::placeholder {
     color: var(--SmartThemeBodyColor);
-    opacity: 0.4;
-}
-
-.lt-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
+    opacity: 0.35;
 }
 
 /* ===== BUTTONS ===== */
 .lt-actions {
     display: flex;
-    gap: 5px;
-    margin-top: 8px;
-    padding-top: 6px;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+    padding-top: 10px;
     border-top: 1px solid var(--SmartThemeBorderColor);
 }
 
 .lt-btn {
-    flex: 1;
-    padding: 5px 8px;
+    width: 100%;
+    padding: 8px 10px;
     border: 1px solid var(--SmartThemeBorderColor);
-    border-radius: 3px;
-    font-size: 0.7em;
+    border-radius: 4px;
+    font-size: 0.75em;
     cursor: pointer;
     transition: all 0.1s;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 6px;
     font-family: inherit;
 }
 
@@ -234,7 +197,7 @@
 }
 
 .lt-btn-primary:hover {
-    filter: brightness(1.15);
+    filter: brightness(1.1);
 }
 
 .lt-btn-secondary {
@@ -260,24 +223,18 @@
 @media (max-width: 600px) {
     #lt-popup {
         position: fixed;
-        bottom: 50px;
+        bottom: 55px;
         left: 8px;
         right: 8px;
         width: auto;
-        max-width: none;
     }
 
-    .lt-row {
-        grid-template-columns: 1fr;
-    }
-
-    .lt-field input,
-    .lt-field select {
-        padding: 8px;
+    .lt-field input {
+        padding: 10px;
         font-size: 16px;
     }
 
     .lt-btn {
-        padding: 8px 10px;
+        padding: 12px;
     }
 }
